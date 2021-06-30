@@ -17,6 +17,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.util.registry.RegistryKey;
+import net.minecraft.world.GameRules;
 import net.minecraft.world.World;
 
 import java.util.ArrayList;
@@ -27,26 +28,30 @@ public class Soul {
     public final BlockPos pos;
     public final RegistryKey<World> worldId;
     public ServerWorld world;
+
     public List<ItemStack> main;
     public List<ItemStack> armor;
     public ItemStack offhand;
 
-    public Soul(Vec3d pos, World world, PlayerInventory inventory) {
+    public int experience;
+
+    public Soul(Vec3d pos, World world, PlayerEntity player) {
         this.pos = new BlockPos(pos);
         this.world = (ServerWorld) world;
         this.worldId = RegistryKey.of(Registry.DIMENSION, world.getRegistryKey().getValue());
 
-        if (inventory == null)
-            return;
-
-        this.armor = inventory.armor;
-        this.offhand = inventory.offHand.get(0);
+        this.armor = player.inventory.armor;
+        this.offhand = player.inventory.offHand.get(0);
 
         List<ItemStack> main = new ArrayList<>();
-        for (ItemStack item : inventory.main)
+        for (ItemStack item : player.inventory.main)
             if (!item.isEmpty())
                 main.add(item);
         this.main = main;
+
+        this.experience = player.totalExperience;
+        if (!this.world.getGameRules().getBoolean(GameRules.KEEP_INVENTORY) && !player.isSpectator())
+            experience -= Math.min(player.experienceLevel * 7, 100);
     }
 
     public Soul(CompoundTag tag) {
@@ -83,7 +88,7 @@ public class Soul {
             for (int i = 0; i < players.size() && main.size() + armor.size() + (offhand.isEmpty()? 0 : 1) > 0; i++)
                 transferInventory(players.get(i));
         }
-        return main.isEmpty();
+        return main.isEmpty() && experience == 0;
 
     }
 
@@ -126,6 +131,9 @@ public class Soul {
                 i--;
             }
         }
+
+        player.addExperience(experience);
+        experience = 0;
 
     }
 
