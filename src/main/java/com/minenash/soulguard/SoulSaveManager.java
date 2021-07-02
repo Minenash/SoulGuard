@@ -1,7 +1,7 @@
 package com.minenash.soulguard;
 
+import com.minenash.soulguard.config.ConfigManager;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.item.ItemGroup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtIo;
@@ -9,13 +9,14 @@ import net.minecraft.nbt.Tag;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 
 public class SoulSaveManager {
 
     private static final File SAVE_FILE = FabricLoader.getInstance().getConfigDir().resolve("soul_guard/souls.nbt").toFile();
-    private static final File CONFIG_FOLDER = FabricLoader.getInstance().getConfigDir().resolve("soul_guard").toFile();
+
 
     public static List<Soul> souls = new ArrayList<>();
 
@@ -50,7 +51,7 @@ public class SoulSaveManager {
 
         try {
             if (!SAVE_FILE.exists()) {
-                CONFIG_FOLDER.mkdir();
+                Files.createDirectory(ConfigManager.CONFIG_FOLDER);
                 SAVE_FILE.createNewFile();
             }
             NbtIo.write(rootTag, SAVE_FILE);
@@ -59,6 +60,11 @@ public class SoulSaveManager {
             System.out.println("Couldn't save Souls");
             e.printStackTrace();
         }
+    }
+
+    public static void unload() {
+        save();
+        souls.clear();
     }
 
 }

@@ -1,5 +1,6 @@
 package com.minenash.soulguard;
 
+import com.minenash.soulguard.config.Config;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.ItemStack;
@@ -82,7 +83,7 @@ public class Soul {
         }
 
         if (world.isChunkLoaded(pos)) {
-            render();
+            Config.particles.forEach(p -> p.render(world,pos));
 
             List<ServerPlayerEntity> players = world.getPlayers(p -> p.isAlive() && pos.isWithinDistance(p.getPos(),1));
             for (int i = 0; i < players.size() && main.size() + armor.size() + (offhand.isEmpty()? 0 : 1) > 0; i++)
@@ -90,16 +91,6 @@ public class Soul {
         }
         return main.isEmpty() && experience == 0;
 
-    }
-
-    // Maybe per player?
-    public void render() {
-        particle(ParticleTypes.ENCHANT, 1, 18, 0.5, 0.1, 1, 0.1);
-        particle(new DustParticleEffect(0.6F,0.8F,1,1F), 1, 5, 0.5, 0.25, 1, 0.25);
-    }
-
-    private void particle(ParticleEffect particle, double yOffset, int count, double speed, double deltaX, double deltaY, double deltaZ) {
-        world.spawnParticles(particle, pos.getX(), pos.getY() + yOffset, pos.getZ(), count, deltaX, deltaY, deltaZ, speed);
     }
 
     private void transferInventory(PlayerEntity player) {
