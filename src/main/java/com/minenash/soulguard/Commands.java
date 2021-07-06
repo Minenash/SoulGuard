@@ -54,6 +54,7 @@ public class Commands {
     }
 
     private static int viewSoul(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        context.getSource().sendFeedback(new LiteralText("§cView Soul Not Implemented Yet"), false);
         return 1;
     }
 

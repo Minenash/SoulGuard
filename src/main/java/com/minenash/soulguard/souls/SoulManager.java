@@ -42,9 +42,9 @@ public class SoulManager {
 
     private static Text coordsText(ServerCommandSource sender, BlockPos pos) {
         String coord = pos.getX() + " " + pos.getY() + " " + pos.getZ();
-        MutableText text = new LiteralText(" " + coord);
+        MutableText text = new LiteralText(" §6Position: §e" + coord);
         if (sender.hasPermissionLevel(2))
-            text.append(" " + coord).styled( style -> style
+            text.styled( style -> style
                     .withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/tp " + coord))
                     .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new LiteralText("Click to teleport to soul"))));
         return text;
