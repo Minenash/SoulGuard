@@ -1,15 +1,13 @@
-package com.minenash.soulguard;
+package com.minenash.soulguard.souls;
 
 import com.minenash.soulguard.config.Config;
+import net.minecraft.entity.ExperienceOrbEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
-import net.minecraft.particle.DustParticleEffect;
-import net.minecraft.particle.ParticleEffect;
-import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -23,12 +21,14 @@ import net.minecraft.world.World;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public class Soul {
 
     public final BlockPos pos;
     public final RegistryKey<World> worldId;
     public ServerWorld world;
+    public UUID player;
 
     public List<ItemStack> main;
     public List<ItemStack> armor;
@@ -40,6 +40,7 @@ public class Soul {
         this.pos = new BlockPos(pos);
         this.world = (ServerWorld) world;
         this.worldId = RegistryKey.of(Registry.DIMENSION, world.getRegistryKey().getValue());
+        this.player = player.getUuid();
 
         this.armor = player.inventory.armor;
         this.offhand = player.inventory.offHand.get(0);
@@ -51,8 +52,31 @@ public class Soul {
         this.main = main;
 
         this.experience = player.totalExperience;
-        if (!this.world.getGameRules().getBoolean(GameRules.KEEP_INVENTORY) && !player.isSpectator())
+
+        System.out.println("Total: " + this.experience);
+
+        if (Config.dropRewardXpWhenKilledByPlayer &&!this.world.getGameRules().getBoolean(GameRules.KEEP_INVENTORY) && !player.isSpectator())
             experience -= Math.min(player.experienceLevel * 7, 100);
+
+        System.out.println("After reward: " + this.experience);
+
+        this.experience -= this.experience * (Config.percentXpLostOnDeath / 100.0);
+
+        System.out.println("After loss: " + this.experience);
+
+        int dropXp = (int) (this.experience * (Config.percentXpDroppedOnDeathAfterLoss / 100.0));
+        this.experience -= dropXp;
+        while(dropXp > 0) {
+            int j = ExperienceOrbEntity.roundToOrbSize(dropXp);
+            dropXp -= j;
+            this.world.spawnEntity(new ExperienceOrbEntity(this.world, pos.getX(), pos.getY(), pos.getZ(), j));
+        }
+
+        System.out.println("After drop: " + this.experience);
+
+        if (this.experience < 0)
+            this.experience = 0;
+
     }
 
     public Soul(CompoundTag tag) {
@@ -71,11 +95,11 @@ public class Soul {
             armor.add(ItemStack.fromTag( (CompoundTag) itemTag));
 
         offhand = ItemStack.fromTag( tag.getCompound("offhand_inventory") );
+        player = tag.getUuid("player");
 
     }
 
     public boolean process(MinecraftServer server) {
-
         if (world == null) {
             world = server.getWorld(worldId);
             if (world == null)
@@ -114,6 +138,8 @@ public class Soul {
             }
         }
 
+        boolean mode = player.abilities.creativeMode;
+        player.abilities.creativeMode  = false;
         for (int i = 0; i < main.size(); i++) {
             ItemStack stack = main.get(i);
             playerInv.insertStack(stack);
@@ -122,6 +148,8 @@ public class Soul {
                 i--;
             }
         }
+        player.abilities.creativeMode = mode;
+
 
         player.addExperience(experience);
         experience = 0;
@@ -150,6 +178,7 @@ public class Soul {
         tag.put("main_inventory", mainItems);
         tag.put("armor_inventory", armorItems);
         tag.put("offhand_inventory", offhand.toTag(new CompoundTag()));
+        tag.putUuid("player", player);
 
         return tag;
     }

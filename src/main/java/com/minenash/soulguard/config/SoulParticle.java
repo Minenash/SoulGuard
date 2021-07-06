@@ -51,16 +51,12 @@ public class SoulParticle {
         if (!jType.isString())
             return SoulParticleResult.quickFail("Unknown Particle Type: '" + jType.toString() + "'");
 
-        ParticleType<?> type = Registry.PARTICLE_TYPE.get(new Identifier(jType.toString()));
+        ParticleType<?> type = Registry.PARTICLE_TYPE.get(new Identifier(jType.getAsString()));
         if (type == null)
             return SoulParticleResult.quickFail("Unknown Particle Type: '" + jType.getAsString() + "'");
 
-        if (type == ParticleTypes.BLOCK)
-            return SoulParticleResult.quickFail("Block Particles aren't Supported");
-        if (type == ParticleTypes.ITEM)
-            return SoulParticleResult.quickFail("Item Particles aren't Supported");
-        else if (type == ParticleTypes.FALLING_DUST)
-            return SoulParticleResult.quickFail("Falling Dust Particles aren't Supported");
+        if (type == ParticleTypes.BLOCK || type == ParticleTypes.ITEM || type == ParticleTypes.FALLING_DUST)
+            return SoulParticleResult.quickFail(jType.getAsString() + " Particles aren't Supported");
 
         SoulParticleResult result = new SoulParticleResult();
         result.addDebugMessage("Particle at " + index + " Type: " + type);

@@ -1,13 +1,16 @@
 package com.minenash.soulguard.config;
 
 import com.google.gson.*;
-import com.minenash.soulguard.SoulSaveManager;
+import com.minenash.soulguard.SoulGuard;
+import com.minenash.soulguard.souls.SoulManager;
 import net.fabricmc.loader.api.FabricLoader;
 
 import java.io.IOException;
 import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ConfigManager {
 
@@ -19,7 +22,7 @@ public class ConfigManager {
     public static void load() {
 
         if (!Files.exists(CONFIG_FILE)) {
-            System.out.println("Config file not found, creating one");
+            SoulGuard.LOGGER.warn("Config file not found, creating one");
             saveDefaults();
             return;
         }
@@ -34,7 +37,8 @@ public class ConfigManager {
         }
 
         if (json == null) {
-            System.out.println("Couldn't load config, using, but not saving, defaults");
+            SoulGuard.LOGGER.error("Couldn't load config, souls unloaded for safety");
+            SoulManager.disable();
             return;
         }
 
@@ -44,14 +48,15 @@ public class ConfigManager {
         Integer percentXpDroppedOnDeathAfterLoss = getInteger(json, "percentXpDroppedOnDeathAfterLoss");
         Boolean dropRewardXpWhenKilledByPlayer = getBoolean(json, "dropRewardXpWhenKilledByPlayer");
 
-        JsonArray particles = getArray(json, "particles");
+        JsonArray jParticles = getArray(json, "particles");
+        List<SoulParticle> particles = new ArrayList<>();
 
-        boolean cancelLoadDueToParticles = particles == null;
-        if (particles != null) {
-            for (int i = 0; i < particles.size(); i++) {
-                JsonObject o = particles.get(i).getAsJsonObject();
+        boolean cancelLoadDueToParticles = jParticles == null;
+        if (jParticles != null) {
+            for (int i = 0; i < jParticles.size(); i++) {
+                JsonObject o = jParticles.get(i).getAsJsonObject();
                 if (o == null) {
-                    System.out.println("Particle Entry at index " + i + " is not a particle entry");
+                    SoulGuard.LOGGER.error("Particle Entry at index " + i + " is not a particle entry");
                     cancelLoadDueToParticles = true;
                     continue;
                 }
@@ -59,58 +64,71 @@ public class ConfigManager {
                 if (result.particle == null) {
                     System.out.println();
                     for (String line : result.debugMessages)
-                        System.out.println(line);
+                        SoulGuard.LOGGER.warn(line);
                     cancelLoadDueToParticles = true;
                 }
+                else
+                    particles.add(result.particle);
             }
         }
 
         if (ticksUntilSoulIsVisibleToAllPlayers == null || ticksUntilSoulDespawns == null || percentXpLostOnDeath == null || percentXpDroppedOnDeathAfterLoss == null || dropRewardXpWhenKilledByPlayer == null ||cancelLoadDueToParticles) {
-            System.out.println("Config load aborted, souls unloaded for safety");
-            SoulSaveManager.unload();
+            SoulGuard.LOGGER.error("Config load aborted, souls unloaded for safety");
+            SoulManager.disable();
+            return;
         }
 
+        Config.ticksUntilSoulIsVisibleToAllPlayers = ticksUntilSoulIsVisibleToAllPlayers;
+        Config.ticksUntilSoulDespawns = ticksUntilSoulDespawns;
+        Config.percentXpLostOnDeath = percentXpLostOnDeath;
+        Config.percentXpDroppedOnDeathAfterLoss = percentXpDroppedOnDeathAfterLoss;
+        Config.dropRewardXpWhenKilledByPlayer = dropRewardXpWhenKilledByPlayer;
+        Config.particles = particles;
+
+        SoulManager.enable();
+
+        SoulGuard.LOGGER.info("Config loaded");
     }
 
     private static Integer getInteger(JsonObject json, String member) {
         if (!json.has(member)) {
-            System.out.println("Missing config entry: " + member);
+            SoulGuard.LOGGER.error("Missing config entry: " + member);
             return null;
         }
 
         JsonPrimitive value = json.getAsJsonPrimitive(member);
         if (value.isNumber())
-            return json.getAsInt();
+            return value.getAsInt();
 
-        System.out.println("Config entry, " + member + ", isn't a number");
+        SoulGuard.LOGGER.error("Config entry, " + member + ", isn't a number");
         return null;
 
     }
 
     private static Boolean getBoolean(JsonObject json, String member) {
         if (!json.has(member)) {
-            System.out.println("Missing config entry: " + member);
+            SoulGuard.LOGGER.error("Missing config entry: " + member);
             return null;
         }
 
         JsonPrimitive value = json.getAsJsonPrimitive(member);
         if (value.isBoolean())
-            return json.getAsBoolean();
+            return value.getAsBoolean();
 
-        System.out.println("Config entry, " + member + ", isn't a boolean");
+        SoulGuard.LOGGER.error("Config entry, " + member + ", isn't a boolean");
         return null;
 
     }
 
     private static JsonArray getArray(JsonObject json, String member) {
         if (!json.has(member)) {
-            System.out.println("Missing config entry: " + member);
+            SoulGuard.LOGGER.error("Missing config entry: " + member);
             return null;
         }
 
         JsonArray value = json.getAsJsonArray(member);
         if (value == null)
-            System.out.println("Config entry, " + member + ", isn't a list");
+            SoulGuard.LOGGER.error("Config entry, " + member + ", isn't a list");
         return value;
     }
 
@@ -132,7 +150,7 @@ public class ConfigManager {
         particle1.addProperty("offsetY", 1);
 
         JsonObject particle2 = new JsonObject();
-        particle1.addProperty("type", "dust");
+        particle2.addProperty("type", "dust");
         particle2.addProperty("color", "9ACDFF");
         particle2.addProperty("count", 5);
         particle2.addProperty("speed", 0.5);
@@ -148,9 +166,10 @@ public class ConfigManager {
 
         try {
             Files.write(CONFIG_FILE, gson.toJson(json).getBytes());
+            SoulGuard.LOGGER.info("Created default config");
         } catch (IOException e) {
             e.printStackTrace();
-            System.out.println("Couldn't create default config");
+            SoulGuard.LOGGER.error("Couldn't create default config");
         }
 
     }

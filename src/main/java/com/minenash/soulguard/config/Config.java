@@ -1,7 +1,5 @@
 package com.minenash.soulguard.config;
 
-import net.minecraft.client.particle.BlockFallingDustParticle;
-import net.minecraft.particle.BlockStateParticleEffect;
 import net.minecraft.particle.DustParticleEffect;
 import net.minecraft.particle.ParticleTypes;
 
