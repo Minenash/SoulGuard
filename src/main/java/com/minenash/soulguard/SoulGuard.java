@@ -1,5 +1,6 @@
 package com.minenash.soulguard;
 
+import com.minenash.soulguard.commands.Commands;
 import com.minenash.soulguard.config.ConfigManager;
 import com.minenash.soulguard.souls.Soul;
 import com.minenash.soulguard.souls.SoulManager;
@@ -11,6 +12,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.Iterator;
+import java.util.UUID;
 
 public class SoulGuard implements ModInitializer {
 
@@ -37,6 +39,10 @@ public class SoulGuard implements ModInitializer {
 				}
 			}
 		});
+	}
+
+	public static String getPlayer(UUID uuid) {
+		return server.getUserCache().getByUuid(uuid).getName();
 	}
 
 
