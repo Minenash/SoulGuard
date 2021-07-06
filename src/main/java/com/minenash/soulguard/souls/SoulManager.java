@@ -26,31 +26,6 @@ public class SoulManager {
 
     public static List<Soul> souls = new ArrayList<>();
 
-    public static int listSouls(ServerCommandSource sender, List<UUID> uuids) {
-        List<Soul> souls = uuids == null ? SoulManager.souls : SoulManager.souls.stream().filter( s -> uuids.contains(s.player) ).toList();
-        if (souls.isEmpty()) {
-            sender.sendFeedback(new LiteralText("§cNo Souls to list"), false);
-            return 0;
-        }
-        MutableText text = new LiteralText("§6==Souls==");
-        for (Soul soul : souls)
-            text.append("\n§6Owner: §e" + SoulGuard.server.getUserCache().getByUuid(soul.player).getName())
-                    .append(coordsText(sender, soul.pos));
-        sender.sendFeedback(text, false);
-        return 1;
-    }
-
-    private static Text coordsText(ServerCommandSource sender, BlockPos pos) {
-        String coord = pos.getX() + " " + pos.getY() + " " + pos.getZ();
-        MutableText text = new LiteralText(" §6Position: §e" + coord);
-        if (sender.hasPermissionLevel(2))
-            text.styled( style -> style
-                    .withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/tp " + coord))
-                    .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new LiteralText("Click to teleport to soul"))));
-        return text;
-
-    }
-
     public static void load() {
         if (!SAVE_FILE.exists()) {
             SoulGuard.LOGGER.info("Soul Save File doesn't exist, creating one");

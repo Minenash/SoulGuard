@@ -25,6 +25,10 @@ import java.util.UUID;
 
 public class Soul {
 
+    public int id = 0;
+    public boolean released = false;
+    public boolean locked = false;
+
     public final BlockPos pos;
     public final RegistryKey<World> worldId;
     public ServerWorld world;
@@ -97,6 +101,19 @@ public class Soul {
         offhand = ItemStack.fromTag( tag.getCompound("offhand_inventory") );
         player = tag.getUuid("player");
 
+    }
+
+    public String getPositionString() {
+        return pos.getX() + " " + pos.getY() + " " + pos.getZ();
+    }
+
+    public int getItemCount() {
+        int count = offhand.getCount();
+        for (ItemStack stack : main)
+            count += stack.getCount();
+        for (ItemStack stack : armor)
+            count += stack.getCount();
+        return count;
     }
 
     public boolean process(MinecraftServer server) {
