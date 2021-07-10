@@ -15,6 +15,9 @@ public class Config {
     public static int percentXpDroppedOnDeathAfterLoss = 0;
     public static boolean dropRewardXpWhenKilledByPlayer = true;
 
+    public static boolean allowPlayersToInspectTheirSouls = true;
+    public static boolean allowPlayersToTeleportToTheirSoul = true;
+
     public static List<SoulParticle> particles = Arrays.asList(
             new SoulParticle(ParticleTypes.ENCHANT, 18, 0.5, 0.1, 1, 0.1, 0, 1, 0),
             new SoulParticle(new DustParticleEffect(0.6F,0.8F,1,1F), 5, 0.5, 0.25, 1, 0.25, 0, 1, 0)

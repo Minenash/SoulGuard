@@ -21,11 +21,12 @@ import net.minecraft.world.World;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.UUID;
 
 public class Soul {
 
-    public int id = 0;
+    public String id;
     public boolean released = false;
     public boolean locked = false;
 
@@ -41,6 +42,7 @@ public class Soul {
     public int experience;
 
     public Soul(Vec3d pos, World world, PlayerEntity player) {
+        this.id = generateId();
         this.pos = new BlockPos(pos);
         this.world = (ServerWorld) world;
         this.worldId = RegistryKey.of(Registry.DIMENSION, world.getRegistryKey().getValue());
@@ -100,6 +102,9 @@ public class Soul {
 
         offhand = ItemStack.fromTag( tag.getCompound("offhand_inventory") );
         player = tag.getUuid("player");
+        id = tag.getString("id");
+        released = tag.getBoolean("released");
+        locked = tag.getBoolean("locked");
 
     }
 
@@ -175,6 +180,7 @@ public class Soul {
 
     public CompoundTag toTag() {
         CompoundTag tag = new CompoundTag();
+        tag.putString("id", id);
 
         CompoundTag position = new CompoundTag();
         position.putInt("x", pos.getX());
@@ -196,12 +202,28 @@ public class Soul {
         tag.put("armor_inventory", armorItems);
         tag.put("offhand_inventory", offhand.toTag(new CompoundTag()));
         tag.putUuid("player", player);
+        tag.putBoolean("released", released);
+        tag.putBoolean("locked", locked);
 
         return tag;
     }
 
     public static Soul fromTag(CompoundTag tag) {
         return new Soul(tag);
+    }
+
+    private static final Random RANDOM = new Random();
+    private static final char[] LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".toCharArray();
+
+    private static String generateId() {
+        StringBuilder id;
+        do {
+            id = new StringBuilder();
+            for (int i = 0; i < 6; i++)
+                id.append(LETTERS[RANDOM.nextInt(LETTERS.length)]);
+        }
+        while (SoulManager.souls.containsKey(id.toString()));
+        return id.toString();
     }
 
     @Override

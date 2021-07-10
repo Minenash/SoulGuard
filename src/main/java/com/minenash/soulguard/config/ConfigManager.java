@@ -42,12 +42,6 @@ public class ConfigManager {
             return;
         }
 
-        Integer ticksUntilSoulIsVisibleToAllPlayers = getInteger(json, "ticksUntilSoulIsVisibleToAllPlayers");
-        Integer ticksUntilSoulDespawns = getInteger(json, "ticksUntilSoulDespawns");
-        Integer percentXpLostOnDeath = getInteger(json, "percentXpLostOnDeath");
-        Integer percentXpDroppedOnDeathAfterLoss = getInteger(json, "percentXpDroppedOnDeathAfterLoss");
-        Boolean dropRewardXpWhenKilledByPlayer = getBoolean(json, "dropRewardXpWhenKilledByPlayer");
-
         JsonArray jParticles = getArray(json, "particles");
         List<SoulParticle> particles = new ArrayList<>();
 
@@ -72,8 +66,18 @@ public class ConfigManager {
             }
         }
 
-        if (ticksUntilSoulIsVisibleToAllPlayers == null || ticksUntilSoulDespawns == null || percentXpLostOnDeath == null || percentXpDroppedOnDeathAfterLoss == null || dropRewardXpWhenKilledByPlayer == null ||cancelLoadDueToParticles) {
-            SoulGuard.LOGGER.error("Config load aborted, souls unloaded for safety");
+        Integer ticksUntilSoulIsVisibleToAllPlayers = getInteger(json, "ticksUntilSoulIsVisibleToAllPlayers");
+        Integer ticksUntilSoulDespawns = getInteger(json, "ticksUntilSoulDespawns");
+        Integer percentXpLostOnDeath = getInteger(json, "percentXpLostOnDeath");
+        Integer percentXpDroppedOnDeathAfterLoss = getInteger(json, "percentXpDroppedOnDeathAfterLoss");
+        Boolean dropRewardXpWhenKilledByPlayer = getBoolean(json, "dropRewardXpWhenKilledByPlayer");
+        Boolean allowPlayersToInspectTheirSouls = getBoolean(json, "allowPlayersToInspectTheirSouls");
+        Boolean allowPlayersToTeleportToTheirSoul = getBoolean(json, "allowPlayersToTeleportToTheirSoul");
+
+        if (ticksUntilSoulIsVisibleToAllPlayers == null || ticksUntilSoulDespawns == null || percentXpLostOnDeath == null
+                || percentXpDroppedOnDeathAfterLoss == null || dropRewardXpWhenKilledByPlayer == null || allowPlayersToInspectTheirSouls == null
+                || allowPlayersToTeleportToTheirSoul == null || cancelLoadDueToParticles) {
+            SoulGuard.LOGGER.error("Config load aborted, soul ticking has been disabled for safety");
             SoulManager.disable();
             return;
         }
@@ -83,6 +87,8 @@ public class ConfigManager {
         Config.percentXpLostOnDeath = percentXpLostOnDeath;
         Config.percentXpDroppedOnDeathAfterLoss = percentXpDroppedOnDeathAfterLoss;
         Config.dropRewardXpWhenKilledByPlayer = dropRewardXpWhenKilledByPlayer;
+        Config.allowPlayersToInspectTheirSouls = allowPlayersToInspectTheirSouls;
+        Config.allowPlayersToTeleportToTheirSoul = allowPlayersToTeleportToTheirSoul;
         Config.particles = particles;
 
         SoulManager.enable();

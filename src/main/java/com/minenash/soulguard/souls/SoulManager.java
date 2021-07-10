@@ -14,9 +14,7 @@ import net.minecraft.util.math.BlockPos;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 public class SoulManager {
 
@@ -24,7 +22,7 @@ public class SoulManager {
 
     private static boolean processSouls = false;
 
-    public static List<Soul> souls = new ArrayList<>();
+    public static Map<String, Soul> souls = new HashMap<>();
 
     public static void load() {
         if (!SAVE_FILE.exists()) {
@@ -44,10 +42,12 @@ public class SoulManager {
         }
 
         ListTag soulsTag = rootTag.getList("souls", 10);
-        List<Soul> soulsFromTag = new ArrayList<>();
+        Map<String, Soul> soulsFromTag = new HashMap<>();
 
-        for (Tag soul : soulsTag)
-            soulsFromTag.add( Soul.fromTag((CompoundTag) soul) );
+        for (Tag soulTag : soulsTag) {
+            Soul soul = Soul.fromTag((CompoundTag) soulTag);
+            soulsFromTag.put(soul.id, soul);
+        }
 
         souls = soulsFromTag;
         SoulGuard.LOGGER.info("Load Souls");
@@ -55,7 +55,7 @@ public class SoulManager {
 
     public static void save() {
         ListTag soulsTag = new ListTag();
-        for (Soul soul : souls)
+        for (Soul soul : souls.values())
             soulsTag.add( soul.toTag() );
 
         CompoundTag rootTag = new CompoundTag();
@@ -76,7 +76,8 @@ public class SoulManager {
     }
 
     public static void disable() {
-        save();
+        if (processSouls)
+            save();
         processSouls = false;
     }
 

@@ -24,14 +24,14 @@ public class SoulGuard implements ModInitializer {
 		Commands.register();
 		ServerLifecycleEvents.SERVER_STARTING.register( server -> {
 			SoulGuard.server = server;
-			SoulManager.load();
 			ConfigManager.load();
+			SoulManager.load();
 		});
 
 		ServerTickEvents.END_SERVER_TICK.register(server ->	{
 			if (!SoulManager.processSouls())
 				return;
-			Iterator<Soul> iterator = SoulManager.souls.iterator();
+			Iterator<Soul> iterator = SoulManager.souls.values().iterator();
 			while (iterator.hasNext()) {
 				if (iterator.next().process(server)) {
 					iterator.remove();

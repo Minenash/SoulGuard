@@ -18,7 +18,8 @@ public class PlayerEntityMixin {
 	@Redirect(method = "dropInventory", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/player/PlayerInventory;dropAll()V"))
 	private void dropSoul(PlayerInventory inventory) {
 		Entity e = (Entity)(Object)this;
-		SoulManager.souls.add(new Soul(e.getPos(),e.getEntityWorld(),inventory.player));
+		Soul soul = new Soul(e.getPos(),e.getEntityWorld(),inventory.player);
+		SoulManager.souls.put(soul.id, soul);
 		SoulManager.save();
 	}
 
