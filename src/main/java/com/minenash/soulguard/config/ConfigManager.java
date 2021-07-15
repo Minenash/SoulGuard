@@ -10,20 +10,26 @@ import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class ConfigManager {
 
     public static final Path CONFIG_FOLDER = FabricLoader.getInstance().getConfigDir().resolve("soul_guard");
     private static final Path CONFIG_FILE = CONFIG_FOLDER.resolve("config.json");
 
-    private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
+    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+    private static final Pattern TIME_ZONE = Pattern.compile("(-)?(\\d){2}:(\\d){2}");
 
-    public static void load() {
+    public static void load(boolean tryAgain) {
 
         if (!Files.exists(CONFIG_FILE)) {
-            SoulGuard.LOGGER.warn("Config file not found, creating one");
+            SoulGuard.LOGGER.warn("[Soulguard] Config file not found, creating one");
             saveDefaults();
+            if (tryAgain)
+                load(false);
             return;
         }
 
@@ -31,74 +37,86 @@ public class ConfigManager {
 
         try {
             Reader reader = Files.newBufferedReader(CONFIG_FILE);
-            json = gson.fromJson(reader, JsonObject.class);
+            json = GSON.fromJson(reader, JsonObject.class);
         } catch (IOException e) {
             e.printStackTrace();
         }
 
         if (json == null) {
-            SoulGuard.LOGGER.error("Couldn't load config, souls unloaded for safety");
+            SoulGuard.LOGGER.error("[Soulguard] Couldn't load config, souls unloaded for safety");
             SoulManager.disable();
             return;
         }
 
-        JsonArray jParticles = getArray(json, "particles");
-        List<SoulParticle> particles = new ArrayList<>();
+        List<SoulParticle> boundedParticles = new ArrayList<>();
+        List<SoulParticle> releasedParticles = new ArrayList<>();
+        List<SoulParticle> lockedParticles = new ArrayList<>();
+        List<SoulSound> boundedSounds = new ArrayList<>();
+        List<SoulSound> releasedSounds = new ArrayList<>();
+        List<SoulSound> lockedSounds = new ArrayList<>();
 
-        boolean cancelLoadDueToParticles = jParticles == null;
-        if (jParticles != null) {
-            for (int i = 0; i < jParticles.size(); i++) {
-                JsonObject o = jParticles.get(i).getAsJsonObject();
-                if (o == null) {
-                    SoulGuard.LOGGER.error("Particle Entry at index " + i + " is not a particle entry");
-                    cancelLoadDueToParticles = true;
-                    continue;
-                }
-                SoulParticleResult result = SoulParticle.create(o, i);
-                if (result.particle == null) {
-                    System.out.println();
-                    for (String line : result.debugMessages)
-                        SoulGuard.LOGGER.warn(line);
-                    cancelLoadDueToParticles = true;
-                }
-                else
-                    particles.add(result.particle);
-            }
-        }
+        boolean cancelLoadDueToLists = setParticlesList(json, "captured_particles", boundedParticles, false);
+        cancelLoadDueToLists |= setParticlesList(json, "released_particles", releasedParticles, true);
+        cancelLoadDueToLists |= setParticlesList(json, "locked_particles", lockedParticles, true);
+        cancelLoadDueToLists |= setSoundsList(json, "captured_sounds", boundedSounds, false);
+        cancelLoadDueToLists |= setSoundsList(json, "released_sounds", releasedSounds, true);
+        cancelLoadDueToLists |= setSoundsList(json, "locked_sounds", lockedSounds, true);
 
-        Integer ticksUntilSoulIsVisibleToAllPlayers = getInteger(json, "ticksUntilSoulIsVisibleToAllPlayers");
-        Integer ticksUntilSoulDespawns = getInteger(json, "ticksUntilSoulDespawns");
-        Integer percentXpLostOnDeath = getInteger(json, "percentXpLostOnDeath");
-        Integer percentXpDroppedOnDeathAfterLoss = getInteger(json, "percentXpDroppedOnDeathAfterLoss");
-        Boolean dropRewardXpWhenKilledByPlayer = getBoolean(json, "dropRewardXpWhenKilledByPlayer");
-        Boolean allowPlayersToInspectTheirSouls = getBoolean(json, "allowPlayersToInspectTheirSouls");
-        Boolean allowPlayersToTeleportToTheirSoul = getBoolean(json, "allowPlayersToTeleportToTheirSoul");
+        Integer minutesUntilSoulIsVisibleToAllPlayers = getInteger(json, "minutes_until_soul_is_visible_to_all_players");
+        Integer minutesUntilSoulDespawns = getInteger(json, "minutes_until_soul_despawns");
+        Integer percentXpLostOnDeath = getInteger(json, "percent_xp_lost_on_death");
+        Integer percentXpDroppedOnDeathAfterLoss = getInteger(json, "percent_xp_dropped_on_death_after_loss");
+        Boolean dropRewardXpWhenKilledByPlayer = getBoolean(json, "drop_reward_xp_when_killed_by_player");
+        Boolean allowPlayersToInspectTheirSouls = getBoolean(json, "allow_players_to_inspect_their_souls");
+        Boolean allowPlayersToTeleportToTheirSoul = getBoolean(json, "allow_players_to_teleport_to_their_soul");
+        String timezoneOffset = getString(json, "timezone_offset");
+        String timezoneAbbreviation = getString(json, "timezone_abbreviation");
 
-        if (ticksUntilSoulIsVisibleToAllPlayers == null || ticksUntilSoulDespawns == null || percentXpLostOnDeath == null
+        if (minutesUntilSoulIsVisibleToAllPlayers == null || minutesUntilSoulDespawns == null || percentXpLostOnDeath == null
                 || percentXpDroppedOnDeathAfterLoss == null || dropRewardXpWhenKilledByPlayer == null || allowPlayersToInspectTheirSouls == null
-                || allowPlayersToTeleportToTheirSoul == null || cancelLoadDueToParticles) {
-            SoulGuard.LOGGER.error("Config load aborted, soul ticking has been disabled for safety");
+                || allowPlayersToTeleportToTheirSoul == null || cancelLoadDueToLists) {
+            SoulGuard.LOGGER.error("[Soulguard] Config load aborted, soul ticking has been disabled for safety");
             SoulManager.disable();
             return;
         }
 
-        Config.ticksUntilSoulIsVisibleToAllPlayers = ticksUntilSoulIsVisibleToAllPlayers;
-        Config.ticksUntilSoulDespawns = ticksUntilSoulDespawns;
+        if (timezoneOffset == null || timezoneAbbreviation == null)
+            SoulGuard.LOGGER.warn("[Soulguard] Timezone information is missing. System's default will be used");
+        else if (!timezoneOffset.equals("system")){
+
+            Matcher matcher = TIME_ZONE.matcher(timezoneOffset);
+            if (matcher.matches()) {
+                int offset = (matcher.group(1).isEmpty() ? 1 : -1) * (Integer.parseInt(matcher.group(2))*60 + Integer.parseInt(matcher.group(3)));
+                Config.timezoneOffset =  60000L * (new Date().getTimezoneOffset() - offset);
+                if (!timezoneAbbreviation.equals("system"))
+                    Config.timezoneAbbreviation = timezoneAbbreviation;
+            }
+            else
+                SoulGuard.LOGGER.warn("[Soulguard] timezone_offset could not be read. Is it in the correct format? System's default will be used");
+        }
+
+        Config.minutesUntilSoulIsVisibleToAllPlayers = minutesUntilSoulIsVisibleToAllPlayers;
+        Config.minutesUntilSoulDespawns = minutesUntilSoulDespawns;
         Config.percentXpLostOnDeath = percentXpLostOnDeath;
         Config.percentXpDroppedOnDeathAfterLoss = percentXpDroppedOnDeathAfterLoss;
         Config.dropRewardXpWhenKilledByPlayer = dropRewardXpWhenKilledByPlayer;
         Config.allowPlayersToInspectTheirSouls = allowPlayersToInspectTheirSouls;
         Config.allowPlayersToTeleportToTheirSoul = allowPlayersToTeleportToTheirSoul;
-        Config.particles = particles;
+        Config.boundedParticles = boundedParticles;
+        Config.releasedParticles = releasedParticles.isEmpty() ? boundedParticles : releasedParticles;
+        Config.lockedParticles = lockedParticles.isEmpty() ? boundedParticles : lockedParticles;
+        Config.boundedSounds = boundedSounds;
+        Config.releasedSounds = releasedSounds.isEmpty() ? boundedSounds : releasedSounds;
+        Config.lockedSounds = lockedSounds.isEmpty() ? boundedSounds : lockedSounds;
 
         SoulManager.enable();
 
-        SoulGuard.LOGGER.info("Config loaded");
+        SoulGuard.LOGGER.info("[Soulguard] Config loaded");
     }
 
     private static Integer getInteger(JsonObject json, String member) {
         if (!json.has(member)) {
-            SoulGuard.LOGGER.error("Missing config entry: " + member);
+            SoulGuard.LOGGER.error("[Soulguard] Missing config entry: " + member);
             return null;
         }
 
@@ -106,14 +124,13 @@ public class ConfigManager {
         if (value.isNumber())
             return value.getAsInt();
 
-        SoulGuard.LOGGER.error("Config entry, " + member + ", isn't a number");
+        SoulGuard.LOGGER.error("[Soulguard] Config entry, " + member + ", isn't a number");
         return null;
-
     }
 
     private static Boolean getBoolean(JsonObject json, String member) {
         if (!json.has(member)) {
-            SoulGuard.LOGGER.error("Missing config entry: " + member);
+            SoulGuard.LOGGER.error("[Soulguard] Missing config entry: " + member);
             return null;
         }
 
@@ -121,63 +138,91 @@ public class ConfigManager {
         if (value.isBoolean())
             return value.getAsBoolean();
 
-        SoulGuard.LOGGER.error("Config entry, " + member + ", isn't a boolean");
+        SoulGuard.LOGGER.error("[Soulguard] Config entry, " + member + ", isn't a boolean");
         return null;
+    }
 
+    private static String getString(JsonObject json, String member) {
+        if (!json.has(member)) {
+            SoulGuard.LOGGER.error("[Soulguard] Missing config entry: " + member);
+            return null;
+        }
+        return json.getAsJsonPrimitive(member).getAsString();
     }
 
     private static JsonArray getArray(JsonObject json, String member) {
         if (!json.has(member)) {
-            SoulGuard.LOGGER.error("Missing config entry: " + member);
+            SoulGuard.LOGGER.error("[Soulguard] Missing config entry: " + member);
             return null;
         }
 
-        JsonArray value = json.getAsJsonArray(member);
-        if (value == null)
-            SoulGuard.LOGGER.error("Config entry, " + member + ", isn't a list");
-        return value;
+        if (json.get(member).isJsonArray())
+            return json.getAsJsonArray(member);
+
+        SoulGuard.LOGGER.error("[Soulguard] Config entry, " + member + ", isn't a list");
+        return null;
+    }
+
+    private static boolean setParticlesList(JsonObject json, String member, List<SoulParticle> list, boolean ignoreMissing) {
+        JsonArray jParticles = getArray(json, member);
+
+        if (jParticles == null)
+           return !ignoreMissing;
+
+        boolean cancelLoadDueToParticles = false;
+        for (int i = 0; i < jParticles.size(); i++) {
+            JsonObject o = jParticles.get(i).getAsJsonObject();
+            if (o == null) {
+                SoulGuard.LOGGER.error("[Soulguard] Particle Entry at index " + i + " is not a particle entry");
+                cancelLoadDueToParticles = true;
+                continue;
+            }
+            SoulPropertyResult<SoulParticle> result = SoulParticle.create(o, i);
+            result.printDebug();
+
+            if (result.value == null)
+                cancelLoadDueToParticles = true;
+            else
+                list.add(result.value);
+        }
+        return cancelLoadDueToParticles;
+    }
+
+    private static boolean setSoundsList(JsonObject json, String member, List<SoulSound> list, boolean ignoreMissing) {
+        JsonArray jParticles = getArray(json, member);
+
+        if (jParticles == null)
+            return !ignoreMissing;
+
+        boolean cancelLoadDueToSounds = false;
+        for (int i = 0; i < jParticles.size(); i++) {
+            JsonObject o = jParticles.get(i).getAsJsonObject();
+            if (o == null) {
+                SoulGuard.LOGGER.error("[Soulguard] Sound Entry at index " + i + " is not a particle entry");
+                cancelLoadDueToSounds = true;
+                continue;
+            }
+            SoulPropertyResult<SoulSound> result = SoulSound.create(o, i);
+            result.printDebug();
+
+            if (result.value == null)
+                cancelLoadDueToSounds = true;
+            else
+                list.add(result.value);
+        }
+        return cancelLoadDueToSounds;
     }
 
     public static void saveDefaults() {
-        JsonObject json = new JsonObject();
-        json.addProperty("ticksUntilSoulIsVisibleToAllPlayers", Config.ticksUntilSoulIsVisibleToAllPlayers);
-        json.addProperty("ticksUntilSoulDespawns", Config.ticksUntilSoulDespawns);
-        json.addProperty("percentXpLostOnDeath", Config.percentXpLostOnDeath);
-        json.addProperty("percentXpDroppedOnDeathAfterLoss", Config.percentXpDroppedOnDeathAfterLoss);
-        json.addProperty("dropRewardXpWhenKilledByPlayer", Config.dropRewardXpWhenKilledByPlayer);
-
-        JsonObject particle1 = new JsonObject();
-        particle1.addProperty("type", "enchant");
-        particle1.addProperty("count", 18);
-        particle1.addProperty("speed", 0.5);
-        particle1.addProperty("deltaX", 0.1);
-        particle1.addProperty("deltaY", 1);
-        particle1.addProperty("deltaZ", 0.1);
-        particle1.addProperty("offsetY", 1);
-
-        JsonObject particle2 = new JsonObject();
-        particle2.addProperty("type", "dust");
-        particle2.addProperty("color", "9ACDFF");
-        particle2.addProperty("count", 5);
-        particle2.addProperty("speed", 0.5);
-        particle2.addProperty("deltaX", 0.25);
-        particle2.addProperty("deltaY", 1);
-        particle2.addProperty("deltaZ", 0.25);
-        particle2.addProperty("offsetY", 1);
-
-        JsonArray particles = new JsonArray();
-        particles.add(particle1);
-        particles.add(particle2);
-        json.add("particles", particles);
-
         try {
-            Files.write(CONFIG_FILE, gson.toJson(json).getBytes());
-            SoulGuard.LOGGER.info("Created default config");
+            if (!Files.exists(ConfigManager.CONFIG_FOLDER))
+                Files.createDirectory(ConfigManager.CONFIG_FOLDER);
+            Files.write(CONFIG_FILE, ConfigManager.class.getResourceAsStream("/assets/modid/default_config.json").readAllBytes());
+            SoulGuard.LOGGER.info("[Soulguard] Created default config");
         } catch (IOException e) {
             e.printStackTrace();
-            SoulGuard.LOGGER.error("Couldn't create default config");
+            SoulGuard.LOGGER.error("[Soulguard] Couldn't create default config");
         }
-
     }
 
 

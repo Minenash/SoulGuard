@@ -1,5 +1,6 @@
 package com.minenash.soulguard.commands;
 
+import com.minenash.soulguard.SoulGuard;
 import com.minenash.soulguard.config.ConfigManager;
 import com.minenash.soulguard.souls.Soul;
 import com.minenash.soulguard.souls.SoulManager;
@@ -9,6 +10,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.fabricmc.fabric.api.command.v1.CommandRegistrationCallback;
 import net.minecraft.command.argument.GameProfileArgumentType;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.*;
 
@@ -32,6 +34,7 @@ public class Commands {
                   .executes(Commands::list)
                   .then( literal("reload").requires(isOp).executes(Commands::reload))
                   .then( literal("listall").requires(isOp).executes(Commands::listAll))
+                  .then( literal("seecapturedsouls").requires(isOp).executes(Commands::seecapturedsouls))
                   .then( literal("list").requires(isOp)
                     .then( argument("player", gameProfile()).executes(Commands::listPlayer)))
                   .then( literal("delete").requires(isOp)
@@ -40,32 +43,38 @@ public class Commands {
                     .then( argument("soulId", string()).executes(Commands::inspectSoul)))
                   .then( literal("release")
                     .then( argument("soulId", string()).executes(Commands::releaseSoul)))
-                  .then( literal("recapture")
-                    .then( argument("soulId", string()).executes(Commands::recaptureSoul)))
                   .then( literal("lock").requires(isOp)
                     .then( argument("soulId", string()).executes(Commands::lockSoul)))
-                  .then( literal("unlock").requires(isOp)
-                    .then( argument("soulId", string()).executes(Commands::unlockSoul)))
         )));
     }
 
     private static int reload(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         context.getSource().getPlayer().sendMessage(new LiteralText("[SoulGuard] Config Reloaded"), false);
-        ConfigManager.load();
+        ConfigManager.load(true);
         return 1;
-    }
-
-    private static int listAll(CommandContext<ServerCommandSource> context) {
-        return CommandHelper.listSouls(context.getSource(), null, true, false);
     }
 
     private static int list(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         return CommandHelper.listSouls(context.getSource(), Collections.singletonList(context.getSource().getPlayer().getUuid()), false, true);
     }
 
+    private static int listAll(CommandContext<ServerCommandSource> context) {
+        return CommandHelper.listSouls(context.getSource(), null, true, false);
+    }
+
+    private static int seecapturedsouls(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        PlayerEntity player = context.getSource().getPlayer();
+        if (SoulGuard.CAN_SEE_BOUNDED_SOULS.contains(player)) {
+            SoulGuard.CAN_SEE_BOUNDED_SOULS.remove(player);
+            return feedback(context, "§aYou can no longer see captured souls", true);
+        }
+        SoulGuard.CAN_SEE_BOUNDED_SOULS.add(player);
+        return feedback(context, "§aYou can now see captured souls", true);
+    }
+
     private static int listPlayer(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         List<UUID> profiles = GameProfileArgumentType.getProfileArgument(context, "player").stream().map(GameProfile::getId).toList();
-        return CommandHelper.listSouls(context.getSource(), profiles, profiles.size() > 1,false);
+        return CommandHelper.listSouls(context.getSource(), profiles, profiles.size() > 1, false);
     }
 
     private static int deleteSoul(CommandContext<ServerCommandSource> context) {
@@ -94,23 +103,12 @@ public class Commands {
             return feedback(context, "§cThere's no soul with id: §e" + soulId, false);
 
         Soul soul = SoulManager.souls.get(soulId);
+
+        if (soul.releaseIn == -1 && !context.getSource().hasPermissionLevel(2))
+            return feedback(context, CommandHelper.infoText("§cYou can no longer recapture soul §e", soul, ""), false);
+        soul.released = !soul.released;
         if (soul.released)
-            return feedback(context, CommandHelper.infoText("§aSoul ", SoulManager.souls.get(soulId), "§a was already released"), true);
-
-        soul.released = true;
-        return feedback(context, CommandHelper.infoText("§aSoul ", SoulManager.souls.get(soulId), "§a has been released"), true);
-    }
-
-    private static int recaptureSoul(CommandContext<ServerCommandSource> context) {
-        String soulId = StringArgumentType.getString(context, "soulId");
-        if (!SoulManager.souls.containsKey(soulId))
-            return feedback(context, "§cThere's no soul with id: §e" + soulId, false);
-
-        Soul soul = SoulManager.souls.get(soulId);
-        if (!soul.released)
-            return feedback(context, CommandHelper.infoText("§aSoul ", SoulManager.souls.get(soulId), "§a wasn't released"), true);
-
-        soul.released = false;
+            return feedback(context, CommandHelper.infoText("§aSoul ", SoulManager.souls.get(soulId), "§a has been released"), true);
         return feedback(context, CommandHelper.infoText("§aSoul ", SoulManager.souls.get(soulId), "§a has been recaptured"), true);
     }
 
@@ -120,23 +118,9 @@ public class Commands {
             return feedback(context, "§cThere's no soul with id: §e" + soulId, false);
 
         Soul soul = SoulManager.souls.get(soulId);
+        soul.locked = !soul.locked;
         if (soul.locked)
-            return feedback(context, CommandHelper.infoText("§aSoul ", SoulManager.souls.get(soulId), "§a was already locked"), true);
-
-        soul.locked = true;
-        return feedback(context, CommandHelper.infoText("§aSoul ", SoulManager.souls.get(soulId), "§a has been locked"), true);
-    }
-
-    private static int unlockSoul(CommandContext<ServerCommandSource> context) {
-        String soulId = StringArgumentType.getString(context, "soulId");
-        if (!SoulManager.souls.containsKey(soulId))
-            return feedback(context, "§cThere's no soul with id: §e" + soulId, false);
-
-        Soul soul = SoulManager.souls.get(soulId);
-        if (!soul.locked)
-            return feedback(context, CommandHelper.infoText("§aSoul ", SoulManager.souls.get(soulId), "§a was already unlocked"), true);
-
-        soul.locked = false;
+            return feedback(context, CommandHelper.infoText("§aSoul ", SoulManager.souls.get(soulId), "§a has been locked"), true);
         return feedback(context, CommandHelper.infoText("§aSoul ", SoulManager.souls.get(soulId), "§a has been unlocked"), true);
     }
 

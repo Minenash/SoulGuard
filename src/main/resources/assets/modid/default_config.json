@@ -1,0 +1,42 @@
+{
+  "minutes_until_soul_is_visible_to_all_players": -1,
+  "minutes_until_soul_despawns": -1,
+  "percent_xp_lost_on_death": 0,
+  "percent_xp_dropped_on_death_after_loss": 0,
+  "drop_reward_xp_when_killed_by_player": true,
+  "allow_players_to_inspect_their_souls": true,
+  "allow_players_to_teleport_to_their_soul": true,
+  "timezone_offset": "system",
+  "timezone_abbreviation": "system",
+  "captured_particles": [
+    {
+      "type": "enchant",
+      "count": 18,
+      "speed": 0.5,
+      "delta": [0.1, 1.0, 0.1],
+      "offset": [0.0, 1.0, 0.0]
+    },
+    {
+      "type": "dust",
+      "color": "9ACDFF",
+      "count": 5,
+      "speed": 0.5,
+      "delta": [0.25, 1.0, 0.25],
+      "offset": [0.0, 1.0, 0.0]
+    }
+  ],
+  "released_particles": [],
+  "locked_particles": [],
+  "captured_sounds": [
+    {
+      "sound": "entity.ghast.scream",
+      "volume": 1,
+      "pitch": 1,
+      "offset": [0.0, 1.0, 0.0],
+      "frequency": 1,
+      "delay": 0
+    }
+  ],
+  "released_sounds": [],
+  "locked_sounds": []
+}

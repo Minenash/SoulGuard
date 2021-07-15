@@ -1,5 +1,6 @@
 package com.minenash.soulguard.souls;
 
+import com.minenash.soulguard.SoulGuard;
 import com.minenash.soulguard.config.Config;
 import net.minecraft.entity.ExperienceOrbEntity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -11,6 +12,7 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.text.LiteralText;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
@@ -27,8 +29,11 @@ import java.util.UUID;
 public class Soul {
 
     public String id;
-    public boolean released = false;
-    public boolean locked = false;
+    public long createdAt;
+    public boolean released;
+    public boolean locked;
+    public int releaseIn;
+    public int despawnIn;
 
     public final BlockPos pos;
     public final RegistryKey<World> worldId;
@@ -43,10 +48,16 @@ public class Soul {
 
     public Soul(Vec3d pos, World world, PlayerEntity player) {
         this.id = generateId();
+        this.createdAt = System.currentTimeMillis();
         this.pos = new BlockPos(pos);
         this.world = (ServerWorld) world;
         this.worldId = RegistryKey.of(Registry.DIMENSION, world.getRegistryKey().getValue());
         this.player = player.getUuid();
+
+        this.releaseIn = Math.max(-1, Config.minutesUntilSoulIsVisibleToAllPlayers * 1200);
+        this.despawnIn = Math.max(-1, Config.minutesUntilSoulDespawns * 1200);
+        this.released = this.releaseIn == -1;
+        this.locked = false;
 
         this.armor = player.inventory.armor;
         this.offhand = player.inventory.offHand.get(0);
@@ -59,16 +70,10 @@ public class Soul {
 
         this.experience = player.totalExperience;
 
-        System.out.println("Total: " + this.experience);
-
         if (Config.dropRewardXpWhenKilledByPlayer &&!this.world.getGameRules().getBoolean(GameRules.KEEP_INVENTORY) && !player.isSpectator())
             experience -= Math.min(player.experienceLevel * 7, 100);
 
-        System.out.println("After reward: " + this.experience);
-
         this.experience -= this.experience * (Config.percentXpLostOnDeath / 100.0);
-
-        System.out.println("After loss: " + this.experience);
 
         int dropXp = (int) (this.experience * (Config.percentXpDroppedOnDeathAfterLoss / 100.0));
         this.experience -= dropXp;
@@ -77,8 +82,6 @@ public class Soul {
             dropXp -= j;
             this.world.spawnEntity(new ExperienceOrbEntity(this.world, pos.getX(), pos.getY(), pos.getZ(), j));
         }
-
-        System.out.println("After drop: " + this.experience);
 
         if (this.experience < 0)
             this.experience = 0;
@@ -105,6 +108,9 @@ public class Soul {
         id = tag.getString("id");
         released = tag.getBoolean("released");
         locked = tag.getBoolean("locked");
+        releaseIn = tag.getInt("releaseIn");
+        createdAt = tag.getLong("createdAt");
+        despawnIn = tag.getInt("despawnIn");
 
     }
 
@@ -128,12 +134,48 @@ public class Soul {
                 return false;
         }
 
-        if (world.isChunkLoaded(pos)) {
-            Config.particles.forEach(p -> p.render(world,pos));
+        if (!locked) {
+            if (despawnIn == 0)
+                return true;
+            if (despawnIn > -1)
+                despawnIn--;
 
-            List<ServerPlayerEntity> players = world.getPlayers(p -> p.isAlive() && pos.isWithinDistance(p.getPos(),1));
-            for (int i = 0; i < players.size() && main.size() + armor.size() + (offhand.isEmpty()? 0 : 1) > 0; i++)
-                transferInventory(players.get(i));
+            if (releaseIn == 0)
+                released = true;
+            if (releaseIn > -1)
+                releaseIn--;
+        }
+
+        if (world.isChunkLoaded(pos)) {
+            ServerPlayerEntity player = SoulGuard.server.getPlayerManager().getPlayer(this.player);
+            if (locked) {
+                Config.lockedParticles.forEach(p -> p.render(world, pos, player, released));
+                Config.lockedSounds.forEach(s -> s.play(pos, player, released));
+            }
+            else if (released) {
+                Config.releasedParticles.forEach(p -> p.render(world, pos, player, released));
+                Config.releasedSounds.forEach(s -> s.play(pos, player, released));
+            }
+            else {
+                Config.boundedParticles.forEach(p -> p.render(world, pos, player, released));
+                Config.boundedSounds.forEach(s -> s.play(pos, player, released));
+            }
+
+            if (released) {
+                List<ServerPlayerEntity> players = world.getPlayers(p -> p.isAlive() && pos.isWithinDistance(p.getPos(), 1));
+                for (int i = 0; i < players.size() && main.size() + armor.size() + (offhand.isEmpty() ? 0 : 1) > 0; i++) {
+                    if (locked)
+                        players.get(i).sendMessage(new LiteralText("§4Soul §e" + id + "§4 is locked"), true);
+                    else
+                        transferInventory(players.get(i));
+                }
+            }
+            else if (player != null && player.isAlive() && pos.isWithinDistance(player.getPos(),1)) {
+                if (locked)
+                    player.sendMessage(new LiteralText("§cSoul §e" + id + "§c is locked"), true);
+                else
+                    transferInventory(player);
+            }
         }
         return main.isEmpty() && experience == 0;
 
@@ -181,6 +223,7 @@ public class Soul {
     public CompoundTag toTag() {
         CompoundTag tag = new CompoundTag();
         tag.putString("id", id);
+        tag.putLong("createdAt", createdAt);
 
         CompoundTag position = new CompoundTag();
         position.putInt("x", pos.getX());
@@ -204,6 +247,8 @@ public class Soul {
         tag.putUuid("player", player);
         tag.putBoolean("released", released);
         tag.putBoolean("locked", locked);
+        tag.putInt("releaseIn", releaseIn);
+        tag.putInt("despawnIn", despawnIn);
 
         return tag;
     }

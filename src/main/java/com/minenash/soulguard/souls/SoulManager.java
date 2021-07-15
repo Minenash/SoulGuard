@@ -26,7 +26,7 @@ public class SoulManager {
 
     public static void load() {
         if (!SAVE_FILE.exists()) {
-            SoulGuard.LOGGER.info("Soul Save File doesn't exist, creating one");
+            SoulGuard.LOGGER.info("[Soulguard] Soul Save File doesn't exist, creating one");
             save();
             return;
         }
@@ -37,7 +37,7 @@ public class SoulManager {
         catch (IOException e) { e.printStackTrace(); }
 
         if (rootTag == null) {
-            SoulGuard.LOGGER.error("Couldn't load Souls");
+            SoulGuard.LOGGER.error("[Soulguard] Couldn't load Souls");
             return;
         }
 
@@ -50,7 +50,7 @@ public class SoulManager {
         }
 
         souls = soulsFromTag;
-        SoulGuard.LOGGER.info("Load Souls");
+        SoulGuard.LOGGER.info("[Soulguard] Loaded Souls");
     }
 
     public static void save() {
@@ -68,9 +68,9 @@ public class SoulManager {
                 SAVE_FILE.createNewFile();
             }
             NbtIo.write(rootTag, SAVE_FILE);
-            SoulGuard.LOGGER.info("Saved Souls");
+            SoulGuard.LOGGER.info("[Soulguard] Saved Souls");
         } catch (IOException e) {
-            SoulGuard.LOGGER.error("Couldn't save Souls");
+            SoulGuard.LOGGER.error("[Soulguard] Couldn't save Souls");
             e.printStackTrace();
         }
     }
