@@ -3,10 +3,10 @@
   "id": "soulguard",
   "version": "${version}",
 
-  "name": "Soul Guard",
+  "name": "Soulguard",
   "description": "This is an example description! Tell everyone what your mod is about!",
   "authors": [
-    "Me!"
+    "Minenash"
   ],
   "contact": {
     "homepage": "https://fabricmc.net/",
@@ -14,7 +14,7 @@
   },
 
   "license": "MIT",
-  "icon": "assets/modid/icon.png",
+  "icon": "assets/soulguard/icon.png",
 
   "environment": "*",
   "entrypoints": {
@@ -23,7 +23,7 @@
     ]
   },
   "mixins": [
-    "modid.mixins.json"
+    "soulguard.mixins.json"
   ],
 
   "depends": {

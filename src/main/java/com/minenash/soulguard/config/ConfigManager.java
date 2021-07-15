@@ -217,7 +217,7 @@ public class ConfigManager {
         try {
             if (!Files.exists(ConfigManager.CONFIG_FOLDER))
                 Files.createDirectory(ConfigManager.CONFIG_FOLDER);
-            Files.write(CONFIG_FILE, ConfigManager.class.getResourceAsStream("/assets/modid/default_config.json").readAllBytes());
+            Files.write(CONFIG_FILE, ConfigManager.class.getResourceAsStream("/assets/soulguard/default_config.json").readAllBytes());
             SoulGuard.LOGGER.info("[Soulguard] Created default config");
         } catch (IOException e) {
             e.printStackTrace();
