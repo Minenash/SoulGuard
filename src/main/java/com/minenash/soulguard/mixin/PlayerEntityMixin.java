@@ -23,10 +23,10 @@ public class PlayerEntityMixin {
 	private void dropSoul(PlayerInventory inventory) {
 		Entity e = (Entity)(Object)this;
 		Soul soul = new Soul(e.getPos(),e.getEntityWorld(),inventory.player);
-		SoulManager.souls.put(soul.id, soul);
+		SoulManager.souls.add(soul);
+		SoulManager.idToSoul.put(soul.id, soul);
 		SoulManager.save();
 
-		String autoRelease = Config.minutesUntilSoulIsVisibleToAllPlayers == -1 ? "" : "\n It will auto-release in " + Config.minutesUntilSoulIsVisibleToAllPlayers + "min.";
 		inventory.player.sendMessage(new LiteralText(CommandHelper.getMessage(soul)).styled(style -> style
 				.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new LiteralText("§eClick to release soul now")))
 				.withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/soulguard release " + soul.id))

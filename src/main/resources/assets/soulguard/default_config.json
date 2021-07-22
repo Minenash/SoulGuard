@@ -1,13 +1,16 @@
 {
+  "version": 1,
   "minutes_until_soul_is_visible_to_all_players": -1,
   "minutes_until_soul_despawns": -1,
   "percent_xp_lost_on_death": 0,
   "percent_xp_dropped_on_death_after_loss": 0,
   "drop_reward_xp_when_killed_by_player": true,
   "allow_players_to_inspect_their_souls": true,
-  "allow_players_to_teleport_to_their_soul": true,
+  "allow_players_to_teleport_to_their_soul": false,
+  "allow_players_to_hear_captured_souls": false,
   "timezone_offset": "system",
   "timezone_abbreviation": "system",
+  "exclusive_sound_radius": 1,
   "captured_particles": [
     {
       "type": "enchant",
@@ -33,7 +36,7 @@
       "volume": 1,
       "pitch": 1,
       "offset": [0.0, 1.0, 0.0],
-      "frequency": 1,
+      "frequency": 10,
       "delay": 0
     }
   ],

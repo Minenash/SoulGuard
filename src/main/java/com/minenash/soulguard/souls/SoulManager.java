@@ -7,6 +7,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtIo;
 import net.minecraft.nbt.Tag;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.*;
 import net.minecraft.util.math.BlockPos;
@@ -22,7 +23,34 @@ public class SoulManager {
 
     private static boolean processSouls = false;
 
-    public static Map<String, Soul> souls = new HashMap<>();
+    public static Map<String, Soul> idToSoul = new HashMap<>();
+    public static List<Soul> souls = new ArrayList<>();
+
+    public static List<Soul> soulsProcessedThisTick = new ArrayList<>();
+
+    private static int saveInterval = 0;
+    public static void processSouls(MinecraftServer server) {
+        if (!processSouls)
+            return;
+
+        boolean save = ++saveInterval % 1200 == 0;
+
+        Iterator<Soul> iterator = SoulManager.souls.iterator();
+        while (iterator.hasNext()) {
+            Soul soul = iterator.next();
+            if (soul.process(server)) {
+                SoulManager.idToSoul.remove(soul.id);
+                iterator.remove();
+                save = true;
+            }
+        }
+
+        if (save) {
+            SoulManager.save();
+            saveInterval = 0;
+        }
+        soulsProcessedThisTick.clear();
+    }
 
     public static void load() {
         if (!SAVE_FILE.exists()) {
@@ -42,20 +70,23 @@ public class SoulManager {
         }
 
         ListTag soulsTag = rootTag.getList("souls", 10);
-        Map<String, Soul> soulsFromTag = new HashMap<>();
+        Map<String, Soul> soulsMap = new HashMap<>();
+        List<Soul> soulsList = new ArrayList<>();
 
         for (Tag soulTag : soulsTag) {
             Soul soul = Soul.fromTag((CompoundTag) soulTag);
-            soulsFromTag.put(soul.id, soul);
+            soulsMap.put(soul.id, soul);
+            soulsList.add(soul);
         }
 
-        souls = soulsFromTag;
+        souls = soulsList;
+        idToSoul = soulsMap;
         SoulGuard.LOGGER.info("[Soulguard] Loaded Souls");
     }
 
     public static void save() {
         ListTag soulsTag = new ListTag();
-        for (Soul soul : souls.values())
+        for (Soul soul : souls)
             soulsTag.add( soul.toTag() );
 
         CompoundTag rootTag = new CompoundTag();
@@ -85,8 +116,8 @@ public class SoulManager {
         processSouls = true;
     }
 
-    public static boolean processSouls() {
-        return processSouls;
+    public static boolean isDisabled() {
+        return !processSouls;
     }
 
 }

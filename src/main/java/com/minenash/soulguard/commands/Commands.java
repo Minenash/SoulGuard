@@ -33,9 +33,9 @@ public class Commands {
                 literal("soulguard")
                   .executes(Commands::list)
                   .then( literal("reload").requires(isOp).executes(Commands::reload))
-                  .then( literal("listall").requires(isOp).executes(Commands::listAll))
                   .then( literal("seecapturedsouls").requires(isOp).executes(Commands::seecapturedsouls))
                   .then( literal("list").requires(isOp)
+                    .executes(Commands::listAll)
                     .then( argument("player", gameProfile()).executes(Commands::listPlayer)))
                   .then( literal("delete").requires(isOp)
                     .then( argument("soulId", string()).executes(Commands::deleteSoul)))
@@ -80,48 +80,51 @@ public class Commands {
     private static int deleteSoul(CommandContext<ServerCommandSource> context) {
         String soulId = StringArgumentType.getString(context, "soulId");
 
-        if (!SoulManager.souls.containsKey(soulId))
+        if (!SoulManager.idToSoul.containsKey(soulId))
             return feedback(context, "§cThere's no soul with id: §e" + soulId, false);
 
-        feedback(context, CommandHelper.infoText("§aSoul ", SoulManager.souls.get(soulId), "§a has been deleted"), true);
-        SoulManager.souls.remove(soulId);
+        feedback(context, CommandHelper.infoText("§aSoul ", SoulManager.idToSoul.get(soulId), "§a has been deleted"), true);
+        SoulManager.souls.remove( SoulManager.idToSoul.remove(soulId) );
         SoulManager.save();
         return 1;
     }
 
-    private static int inspectSoul(CommandContext<ServerCommandSource> context) {
+    private static int inspectSoul(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         String soulId = StringArgumentType.getString(context, "soulId");
-        if (!SoulManager.souls.containsKey(soulId))
+        if (!SoulManager.idToSoul.containsKey(soulId))
             return feedback(context, "§cThere's no soul with id: §e" + soulId, false);
-        return feedback(context, "§cInspect Soul Not Implemented Yet", false);
+
+        context.getSource().getPlayer().openHandledScreen(InspectScreenHandlerStuff.createFactory(SoulManager.idToSoul.get(soulId)));
+        return 1;
+//        return feedback(context, "§cInspect Soul Not Implemented Yet", false);
 
     }
 
     private static int releaseSoul(CommandContext<ServerCommandSource> context) {
         String soulId = StringArgumentType.getString(context, "soulId");
-        if (!SoulManager.souls.containsKey(soulId))
+        if (!SoulManager.idToSoul.containsKey(soulId))
             return feedback(context, "§cThere's no soul with id: §e" + soulId, false);
 
-        Soul soul = SoulManager.souls.get(soulId);
+        Soul soul = SoulManager.idToSoul.get(soulId);
 
         if (soul.releaseIn == -1 && !context.getSource().hasPermissionLevel(2))
             return feedback(context, CommandHelper.infoText("§cYou can no longer recapture soul §e", soul, ""), false);
         soul.released = !soul.released;
         if (soul.released)
-            return feedback(context, CommandHelper.infoText("§aSoul ", SoulManager.souls.get(soulId), "§a has been released"), true);
-        return feedback(context, CommandHelper.infoText("§aSoul ", SoulManager.souls.get(soulId), "§a has been recaptured"), true);
+            return feedback(context, CommandHelper.infoText("§aSoul ", SoulManager.idToSoul.get(soulId), "§a has been released"), true);
+        return feedback(context, CommandHelper.infoText("§aSoul ", SoulManager.idToSoul.get(soulId), "§a has been recaptured"), true);
     }
 
     private static int lockSoul(CommandContext<ServerCommandSource> context) {
         String soulId = StringArgumentType.getString(context, "soulId");
-        if (!SoulManager.souls.containsKey(soulId))
+        if (!SoulManager.idToSoul.containsKey(soulId))
             return feedback(context, "§cThere's no soul with id: §e" + soulId, false);
 
-        Soul soul = SoulManager.souls.get(soulId);
+        Soul soul = SoulManager.idToSoul.get(soulId);
         soul.locked = !soul.locked;
         if (soul.locked)
-            return feedback(context, CommandHelper.infoText("§aSoul ", SoulManager.souls.get(soulId), "§a has been locked"), true);
-        return feedback(context, CommandHelper.infoText("§aSoul ", SoulManager.souls.get(soulId), "§a has been unlocked"), true);
+            return feedback(context, CommandHelper.infoText("§aSoul ", SoulManager.idToSoul.get(soulId), "§a has been locked"), true);
+        return feedback(context, CommandHelper.infoText("§aSoul ", SoulManager.idToSoul.get(soulId), "§a has been unlocked"), true);
     }
 
     private static int feedback(CommandContext<ServerCommandSource> context, String msg, boolean pass) {

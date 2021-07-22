@@ -19,9 +19,12 @@ public class Config {
 
     public static boolean allowPlayersToInspectTheirSouls = true;
     public static boolean allowPlayersToTeleportToTheirSoul = true;
+    public static boolean allowPlayersToHearCapturedSouls = false;
 
     public static long timezoneOffset = 0;
     public static String timezoneAbbreviation = null;
+
+    public static int exclusiveSoundRadius = 0;
 
     public static List<SoulParticle> boundedParticles = Arrays.asList(
             new SoulParticle(ParticleTypes.ENCHANT, 18, 0.5, 1, 1, 0.1, 1, 0.1, 0, 1, 0),

@@ -4,6 +4,8 @@ import com.google.gson.*;
 import com.minenash.soulguard.SoulGuard;
 import com.minenash.soulguard.souls.SoulManager;
 import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.LiteralText;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -69,13 +71,21 @@ public class ConfigManager {
         Boolean dropRewardXpWhenKilledByPlayer = getBoolean(json, "drop_reward_xp_when_killed_by_player");
         Boolean allowPlayersToInspectTheirSouls = getBoolean(json, "allow_players_to_inspect_their_souls");
         Boolean allowPlayersToTeleportToTheirSoul = getBoolean(json, "allow_players_to_teleport_to_their_soul");
+        Boolean allowPlayersToHearCapturedSouls = getBoolean(json, "allow_players_to_hear_captured_souls");
         String timezoneOffset = getString(json, "timezone_offset");
         String timezoneAbbreviation = getString(json, "timezone_abbreviation");
+        Integer exclusiveSoundRadius = getInteger(json, "exclusive_sound_radius");
 
         if (minutesUntilSoulIsVisibleToAllPlayers == null || minutesUntilSoulDespawns == null || percentXpLostOnDeath == null
                 || percentXpDroppedOnDeathAfterLoss == null || dropRewardXpWhenKilledByPlayer == null || allowPlayersToInspectTheirSouls == null
-                || allowPlayersToTeleportToTheirSoul == null || cancelLoadDueToLists) {
+                || allowPlayersToTeleportToTheirSoul == null || exclusiveSoundRadius == null || allowPlayersToHearCapturedSouls == null
+                || cancelLoadDueToLists) {
+
             SoulGuard.LOGGER.error("[Soulguard] Config load aborted, soul ticking has been disabled for safety");
+            for (ServerPlayerEntity player : SoulGuard.server.getPlayerManager().getPlayerList())
+                if (player.hasPermissionLevel(2))
+                    player.sendMessage(new LiteralText("§c[Soulguard] Config load aborted, soul ticking has been disabled for safety"), false);
+
             SoulManager.disable();
             return;
         }
@@ -108,6 +118,8 @@ public class ConfigManager {
         Config.boundedSounds = boundedSounds;
         Config.releasedSounds = releasedSounds.isEmpty() ? boundedSounds : releasedSounds;
         Config.lockedSounds = lockedSounds.isEmpty() ? boundedSounds : lockedSounds;
+        Config.exclusiveSoundRadius = exclusiveSoundRadius;
+        Config.allowPlayersToHearCapturedSouls = allowPlayersToHearCapturedSouls;
 
         SoulManager.enable();
 

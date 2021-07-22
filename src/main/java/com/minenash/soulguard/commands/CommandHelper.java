@@ -15,7 +15,11 @@ import java.util.*;
 public class CommandHelper {
 
     public static int listSouls(ServerCommandSource sender, List<UUID> uuids, boolean showOwner, boolean selfList) {
-        Collection<Soul> souls = uuids == null ? SoulManager.souls.values() : SoulManager.souls.values().stream().filter(s -> uuids.contains(s.player) ).toList();
+        if (uuids != null && uuids.isEmpty() ) {
+            sender.sendFeedback(new LiteralText("§cNo players to list souls for"), false);
+            return 0;
+        }
+        Collection<Soul> souls = uuids == null ? SoulManager.souls : SoulManager.souls.stream().filter(s -> uuids.contains(s.player) ).toList();
         if (souls.isEmpty()) {
             sender.sendFeedback(new LiteralText("§cNo Souls to list"), false);
             return 0;

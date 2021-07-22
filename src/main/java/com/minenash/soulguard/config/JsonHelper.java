@@ -69,7 +69,7 @@ public class JsonHelper {
 
         Double[] vec3 = new Double[]{0.0, 0.0, 0.0};
         for (int i = 0; i < 3; i++) {
-            if (value.size() > i+1) {
+            if (value.size() > i) {
                 JsonPrimitive e = value.get(i).getAsJsonPrimitive();
                 if (e.isNumber())
                     vec3[i] = e.getAsDouble();

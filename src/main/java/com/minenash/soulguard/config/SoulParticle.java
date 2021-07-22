@@ -25,13 +25,14 @@ public class SoulParticle {
 
     private int i = 0;
     public void render(ServerWorld world, BlockPos pos, ServerPlayerEntity host, boolean released) {
-        if (i++ < frequency)
+        if (++i < frequency)
             return;
 
         i = 0;
         for (ServerPlayerEntity player : SoulGuard.server.getPlayerManager().getPlayerList()) {
-            if ((released || player == host || player.isSpectator() || SoulGuard.CAN_SEE_BOUNDED_SOULS.contains(player)) && pos.isWithinDistance(player.getPos(), 512))
+            if ((released || player == host || player.isSpectator() || SoulGuard.CAN_SEE_BOUNDED_SOULS.contains(player)) && pos.isWithinDistance(player.getPos(), 512)) {
                 world.spawnParticles(player, particle, true, pos.getX() + offset[0], pos.getY() + offset[1], pos.getZ() + offset[2], count, delta[0], delta[1], delta[2], speed);
+            }
         }
     }
 

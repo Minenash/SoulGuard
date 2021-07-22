@@ -2,6 +2,7 @@ package com.minenash.soulguard.souls;
 
 import com.minenash.soulguard.SoulGuard;
 import com.minenash.soulguard.config.Config;
+import com.minenash.soulguard.config.SoulParticle;
 import net.minecraft.entity.ExperienceOrbEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
@@ -21,10 +22,7 @@ import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.GameRules;
 import net.minecraft.world.World;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
-import java.util.UUID;
+import java.util.*;
 
 public class Soul {
 
@@ -63,10 +61,25 @@ public class Soul {
         this.offhand = player.inventory.offHand.get(0);
 
         List<ItemStack> main = new ArrayList<>();
-        for (ItemStack item : player.inventory.main)
+        main.add(ItemStack.EMPTY);
+        for (ItemStack item : player.inventory.main) {
+            for (ItemStack i : new ArrayList<>(main)) {
+                if (item.getItem() == i.getItem() && ItemStack.areTagsEqual(item, i)) {
+                    int count = i.getCount() + item.getCount();
+                    i.setCount(Math.min(count, 64));
+                    item.setCount(count < 64 ? 0 : count - 64);
+                    break;
+                }
+            }
             if (!item.isEmpty())
-                main.add(item);
+                main.add(item.copy());
+
+        }
+
+        main.remove(0);
         this.main = main;
+
+        System.out.println(main);
 
         this.experience = player.totalExperience;
 
@@ -137,52 +150,58 @@ public class Soul {
         if (!locked) {
             if (despawnIn == 0)
                 return true;
-            if (despawnIn > -1)
+            else if (despawnIn > -1)
                 despawnIn--;
 
             if (releaseIn == 0)
                 released = true;
-            if (releaseIn > -1)
+            else if (releaseIn > -1)
                 releaseIn--;
         }
 
-        if (world.isChunkLoaded(pos)) {
-            ServerPlayerEntity player = SoulGuard.server.getPlayerManager().getPlayer(this.player);
-            if (locked) {
-                Config.lockedParticles.forEach(p -> p.render(world, pos, player, released));
-                Config.lockedSounds.forEach(s -> s.play(pos, player, released));
-            }
-            else if (released) {
-                Config.releasedParticles.forEach(p -> p.render(world, pos, player, released));
-                Config.releasedSounds.forEach(s -> s.play(pos, player, released));
-            }
-            else {
-                Config.boundedParticles.forEach(p -> p.render(world, pos, player, released));
-                Config.boundedSounds.forEach(s -> s.play(pos, player, released));
-            }
+        if (!world.isChunkLoaded(pos))
+            return false;
 
-            if (released) {
-                List<ServerPlayerEntity> players = world.getPlayers(p -> p.isAlive() && pos.isWithinDistance(p.getPos(), 1));
-                for (int i = 0; i < players.size() && main.size() + armor.size() + (offhand.isEmpty() ? 0 : 1) > 0; i++) {
-                    if (locked)
-                        players.get(i).sendMessage(new LiteralText("§4Soul §e" + id + "§4 is locked"), true);
-                    else
-                        transferInventory(players.get(i));
-                }
-            }
-            else if (player != null && player.isAlive() && pos.isWithinDistance(player.getPos(),1)) {
+        ServerPlayerEntity host = SoulGuard.server.getPlayerManager().getPlayer(this.player);
+        render(host);
+
+
+        if (released) {
+            List<ServerPlayerEntity> players = world.getPlayers(p -> p.isAlive() && pos.isWithinDistance(p.getPos(), 1));
+            for (int i = 0; i < players.size() && main.size() + armor.size() + (offhand.isEmpty() ? 0 : 1) > 0; i++) {
                 if (locked)
-                    player.sendMessage(new LiteralText("§cSoul §e" + id + "§c is locked"), true);
+                    players.get(i).sendMessage(new LiteralText("§4Soul §e" + id + "§4 is locked"), true);
                 else
-                    transferInventory(player);
+                    transferInventory(players.get(i));
             }
         }
+        else if (host != null && host.isAlive() && pos.isWithinDistance(host.getPos(),1)) {
+            if (locked)
+                host.sendMessage(new LiteralText("§cSoul §e" + id + "§c is locked"), true);
+            else
+                transferInventory(host);
+        }
+
+        SoulManager.soulsProcessedThisTick.add(this);
+
         return main.isEmpty() && experience == 0;
 
     }
 
+    private void render(ServerPlayerEntity host) {
+        (locked ? Config.lockedParticles : released ? Config.releasedParticles : Config.boundedParticles).forEach(p -> p.render(world, pos, host, released));
+
+        for (Soul soul : SoulManager.soulsProcessedThisTick)
+            if (soul.pos.isWithinDistance(pos, Config.exclusiveSoundRadius))
+                return;
+
+        (locked ? Config.lockedSounds : released ? Config.releasedSounds : Config.boundedSounds).forEach(p -> p.play(pos, host, released));
+    }
+
     private void transferInventory(PlayerEntity player) {
         PlayerInventory playerInv = player.inventory;
+
+        System.out.println(main);
 
         if (!offhand.isEmpty()) {
             if (playerInv.offHand.get(0).isEmpty())
@@ -267,7 +286,7 @@ public class Soul {
             for (int i = 0; i < 6; i++)
                 id.append(LETTERS[RANDOM.nextInt(LETTERS.length)]);
         }
-        while (SoulManager.souls.containsKey(id.toString()));
+        while (SoulManager.idToSoul.containsKey(id.toString()));
         return id.toString();
     }
 
