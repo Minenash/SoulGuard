@@ -3,6 +3,7 @@ package com.minenash.soulguard.config;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import com.minenash.soulguard.SoulGuard;
+import com.minenash.soulguard.souls.Soul;
 import net.minecraft.particle.DustParticleEffect;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.particle.ParticleEffect;
@@ -24,16 +25,20 @@ public class SoulParticle {
     public double[] offset = new double[]{0, 0, 0};
 
     private int i = 0;
-    public void render(ServerWorld world, BlockPos pos, ServerPlayerEntity host, boolean released) {
+    public void render(Soul soul, BlockPos pos, ServerPlayerEntity host) {
         if (++i < frequency)
             return;
 
         i = 0;
-        for (ServerPlayerEntity player : SoulGuard.server.getPlayerManager().getPlayerList()) {
-            if ((released || player == host || player.isSpectator() || SoulGuard.CAN_SEE_BOUNDED_SOULS.contains(player)) && pos.isWithinDistance(player.getPos(), 512)) {
-                world.spawnParticles(player, particle, true, pos.getX() + offset[0], pos.getY() + offset[1], pos.getZ() + offset[2], count, delta[0], delta[1], delta[2], speed);
-            }
-        }
+        for (ServerPlayerEntity player : SoulGuard.server.getPlayerManager().getPlayerList())
+            if (canViewSoul(soul, host, player) && pos.isWithinDistance(player.getPos(), 512))
+                soul.world.spawnParticles(player, particle, true, pos.getX() + offset[0], pos.getY() + offset[1], pos.getZ() + offset[2], count, delta[0], delta[1], delta[2], speed);
+    }
+
+    public boolean canViewSoul(Soul soul, ServerPlayerEntity host, ServerPlayerEntity player) {
+        return (soul.released || player == host || player.isSpectator()
+            || (soul.locked && player.hasPermissionLevel(2))
+            || SoulGuard.CAN_SEE_BOUNDED_SOULS.contains(player));
     }
 
     public SoulParticle() {}

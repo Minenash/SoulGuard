@@ -33,7 +33,7 @@ public class CommandHelper {
         return 1;
     }
 
-    private static Text formatEntry(Soul soul, boolean showOwner, boolean op) {
+    public static Text formatEntry(Soul soul, boolean showOwner, boolean op) {
         String name = SoulGuard.getPlayer(soul.player);
         MutableText text = new LiteralText("\n");
         addHoverText(text, "§8[§6Info§8]", infoHover(soul));
@@ -61,10 +61,12 @@ public class CommandHelper {
             addClickText(text, " §7Owner: §e" + name, "§eClick to show all souls from this player", "/soulguard list " + name, RUN_COMMAND);
 
         String pos = soul.getPositionString();
+
+        text.append(showOwner ? " §7@ " : " §7Location: §e");
         if (Config.allowPlayersToTeleportToTheirSoul || op)
-            addClickText(text, (showOwner ? " §7@ §e" : " §7Location: §e") + pos, "§eClick to Teleport and Collect", "/tp " + pos, RUN_COMMAND);
+            addClickText(text, "§e" + pos, "§eClick to Teleport and Collect", "/execute in " + soul.worldId.getValue() + " run tp " + pos, RUN_COMMAND);
         else
-            addClickText(text, " §7Location: §e" + pos, "Click to Copy Coordinates to Clipboard", pos, COPY_TO_CLIPBOARD);
+            addClickText(text, "§e" + pos, "Click to Copy Coordinates to Clipboard", pos, COPY_TO_CLIPBOARD);
 
         return text;
     }
@@ -112,15 +114,42 @@ public class CommandHelper {
 
     public static String getTimeLeft(String prefix, int timeLeft) {
         return timeLeft == -1? "" :
-            prefix + DATE_FORMAT.format(System.currentTimeMillis() + (timeLeft * 50L) + Config.timezoneOffset) + ", " + (timeLeft/1200) + "m";
+            prefix + DATE_FORMAT.format(System.currentTimeMillis() + (timeLeft * 50L) + Config.timezoneOffset) + ", " + minutesToString(timeLeft/1200);
     }
 
-    public static String getMessage(Soul soul) {
-        return "\n§8You have died... But your §bSoul§8 lives on..."
-                + "\n§7Go back and listen for the soul's cry to get your stuff."
-                + "\nYou have " + Config.minutesUntilSoulIsVisibleToAllPlayers + "min to get it, before others can."
-                + "\nRelease it early by clicking this message."
-                + "\n§8Position: §e" + soul.getPositionString() + "\n";
+
+    public static Text getDeathMessage(Soul soul, boolean op) {
+        MutableText text = new LiteralText("\n§6You have §cdied...§6 But your §bSoul§6 lives on..."
+                + "\nListen closely, souls will cry out."
+                + "\nTouching a soul collects it, granting its items/knowledge to you");
+        if (Config.minutesUntilSoulIsVisibleToAllPlayers > 0 && Config.minutesUntilSoulDespawns > 0) {
+            text.append("\n§6Your soul will ");
+            addHoverText(text, "§6release in §a" + minutesToString(Config.minutesUntilSoulIsVisibleToAllPlayers), "§aWhen souls are released, anyone can collect their contents");
+            text.append("§6 and ");
+            addHoverText(text, "§6despawn in §c" + minutesToString(Config.minutesUntilSoulDespawns), "§cWhen souls despawn, their contents are lost forever");
+            text.append("§6.");
+        }
+        else if (Config.minutesUntilSoulIsVisibleToAllPlayers > 0)
+            text.append("\n§6Your soul will release in §a" + minutesToString(Config.minutesUntilSoulIsVisibleToAllPlayers) + "§6, allowing anyone to collect it.");
+
+        else if (Config.minutesUntilSoulDespawns > 0)
+            text.append("\n§6Your soul will despawn in §c" + minutesToString(Config.minutesUntilSoulDespawns) + "§6, losing its contents forever.");
+
+        return text.append(formatEntry(soul, false, op)).append("\n");
+    }
+
+    private static String minutesToString(int minutes) {
+        String time = "";
+        if (minutes / 1440 > 0) {
+            time += minutes / 1440 + "d ";
+            minutes %= 1440;
+        }
+        if (minutes / 60 > 0) {
+            time += minutes / 60 + "h ";
+            minutes %= 60;
+        }
+        return time + minutes + "m";
+
     }
 
 }

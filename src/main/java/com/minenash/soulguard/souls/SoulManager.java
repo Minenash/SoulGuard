@@ -3,17 +3,13 @@ package com.minenash.soulguard.souls;
 import com.minenash.soulguard.SoulGuard;
 import com.minenash.soulguard.config.ConfigManager;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.NbtIo;
-import net.minecraft.nbt.Tag;
+import net.minecraft.nbt.*;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.*;
 import net.minecraft.util.math.BlockPos;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Files;
 import java.util.*;
 
@@ -61,8 +57,11 @@ public class SoulManager {
 
         CompoundTag rootTag = null;
 
-        try { rootTag = NbtIo.read(SAVE_FILE); }
-        catch (IOException e) { e.printStackTrace(); }
+        try (DataInputStream dataInputStream = new DataInputStream(new FileInputStream(SAVE_FILE))) {
+            rootTag = NbtIo.read(dataInputStream, PositionTracker.DEFAULT);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
         if (rootTag == null) {
             SoulGuard.LOGGER.error("[Soulguard] Couldn't load Souls");
@@ -90,6 +89,7 @@ public class SoulManager {
             soulsTag.add( soul.toTag() );
 
         CompoundTag rootTag = new CompoundTag();
+        rootTag.putInt("schema", 1);
         rootTag.put("souls", soulsTag);
 
         try {
@@ -98,7 +98,9 @@ public class SoulManager {
                     Files.createDirectory(ConfigManager.CONFIG_FOLDER);
                 SAVE_FILE.createNewFile();
             }
-            NbtIo.write(rootTag, SAVE_FILE);
+            try (DataOutputStream dataOutputStream = new DataOutputStream(new FileOutputStream(SAVE_FILE))) {
+                NbtIo.write(rootTag, dataOutputStream);
+            }
             SoulGuard.LOGGER.info("[Soulguard] Saved Souls");
         } catch (IOException e) {
             SoulGuard.LOGGER.error("[Soulguard] Couldn't save Souls");

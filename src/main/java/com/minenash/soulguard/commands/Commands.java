@@ -1,6 +1,7 @@
 package com.minenash.soulguard.commands;
 
 import com.minenash.soulguard.SoulGuard;
+import com.minenash.soulguard.config.Config;
 import com.minenash.soulguard.config.ConfigManager;
 import com.minenash.soulguard.souls.Soul;
 import com.minenash.soulguard.souls.SoulManager;
@@ -28,7 +29,7 @@ public class Commands {
 
     public static void register() {
         Predicate<ServerCommandSource> isOp = s -> s.hasPermissionLevel(2);
-        Predicate<ServerCommandSource> canInspect = s -> s.hasPermissionLevel(2); // || Config.allowPlayerInspectOwnSoul
+        Predicate<ServerCommandSource> canInspect = s -> s.hasPermissionLevel(2) || Config.allowPlayersToInspectTheirSouls;
         CommandRegistrationCallback.EVENT.register(((dispatcher, dedicated) -> dispatcher.register(
                 literal("soulguard")
                   .executes(Commands::list)

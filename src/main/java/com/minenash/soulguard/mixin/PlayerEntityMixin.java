@@ -5,6 +5,7 @@ import com.minenash.soulguard.souls.Soul;
 import com.minenash.soulguard.souls.SoulManager;
 import com.minenash.soulguard.config.Config;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.text.ClickEvent;
@@ -14,28 +15,35 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(PlayerEntity.class)
 public class PlayerEntityMixin {
 
+	boolean wasKilledByPlayer = false;
+
+	@Inject(method = "onDeath", at = @At("HEAD"))
+	private void wasKilledByPlayer(DamageSource source, CallbackInfo info) {
+		wasKilledByPlayer = source.getAttacker() instanceof PlayerEntity;
+	}
+
 	@Redirect(method = "dropInventory", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/player/PlayerInventory;dropAll()V"))
 	private void dropSoul(PlayerInventory inventory) {
 		Entity e = (Entity)(Object)this;
-		Soul soul = new Soul(e.getPos(),e.getEntityWorld(),inventory.player);
+		Soul soul = new Soul(e.getPos(),e.getEntityWorld(),inventory.player, wasKilledByPlayer);
 		SoulManager.souls.add(soul);
 		SoulManager.idToSoul.put(soul.id, soul);
 		SoulManager.save();
 
-		inventory.player.sendMessage(new LiteralText(CommandHelper.getMessage(soul)).styled(style -> style
-				.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new LiteralText("§eClick to release soul now")))
-				.withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/soulguard release " + soul.id))
-		), false);
+		inventory.player.sendMessage(CommandHelper.getDeathMessage(soul, e.hasPermissionLevel(2)), false);
 	}
 
 	@Inject(method = "getCurrentExperience", at = @At("HEAD"), cancellable = true)
 	private void doNotDropXP(CallbackInfoReturnable<Integer> info) {
-		if (!Config.dropRewardXpWhenKilledByPlayer)
+		System.out.println("Killed By player: " + wasKilledByPlayer);
+
+		if (!(Config.dropRewardXpWhenKilledByPlayer && wasKilledByPlayer))
 			info.setReturnValue(0);
 	}
 

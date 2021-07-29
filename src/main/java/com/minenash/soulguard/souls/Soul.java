@@ -3,9 +3,11 @@ package com.minenash.soulguard.souls;
 import com.minenash.soulguard.SoulGuard;
 import com.minenash.soulguard.config.Config;
 import com.minenash.soulguard.config.SoulParticle;
+import dev.emi.trinkets.api.TrinketsApi;
 import net.minecraft.entity.ExperienceOrbEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
+import net.minecraft.inventory.Inventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -30,8 +32,10 @@ public class Soul {
     public long createdAt;
     public boolean released;
     public boolean locked;
+    public boolean sealed;
     public int releaseIn;
     public int despawnIn;
+    public int sealsIn;
 
     public final BlockPos pos;
     public final RegistryKey<World> worldId;
@@ -44,7 +48,7 @@ public class Soul {
 
     public int experience;
 
-    public Soul(Vec3d pos, World world, PlayerEntity player) {
+    public Soul(Vec3d pos, World world, PlayerEntity player, boolean wasKilledByPlayer) {
         this.id = generateId();
         this.createdAt = System.currentTimeMillis();
         this.pos = new BlockPos(pos);
@@ -54,51 +58,85 @@ public class Soul {
 
         this.releaseIn = Math.max(-1, Config.minutesUntilSoulIsVisibleToAllPlayers * 1200);
         this.despawnIn = Math.max(-1, Config.minutesUntilSoulDespawns * 1200);
+        this.sealsIn = 0;
         this.released = this.releaseIn == -1;
         this.locked = false;
+        this.sealed = true;
 
         this.armor = player.inventory.armor;
         this.offhand = player.inventory.offHand.get(0);
 
+        List<ItemStack> playerMain = new ArrayList<>(player.inventory.main);
+        if (SoulGuard.HAS_TRINKETS) {
+            Inventory inv = TrinketsApi.getTrinketsInventory(player);
+            for (int i = 0; i < inv.size(); i++)
+                playerMain.add(inv.getStack(i));
+        }
+
         List<ItemStack> main = new ArrayList<>();
         main.add(ItemStack.EMPTY);
-        for (ItemStack item : player.inventory.main) {
+        for (ItemStack item : playerMain) {
             for (ItemStack i : new ArrayList<>(main)) {
                 if (item.getItem() == i.getItem() && ItemStack.areTagsEqual(item, i)) {
                     int count = i.getCount() + item.getCount();
-                    i.setCount(Math.min(count, 64));
-                    item.setCount(count < 64 ? 0 : count - 64);
+                    int max = i.getMaxCount();
+                    i.setCount(Math.min(count, max));
+                    item.setCount(count < max ? 0 : count - max);
                     break;
                 }
             }
             if (!item.isEmpty())
                 main.add(item.copy());
-
         }
 
         main.remove(0);
-        this.main = main;
 
-        System.out.println(main);
+        while (main.size() > 45) {
+            player.dropItem(main.get(main.size()-1), false);
+            main.remove(main.size()-1);
+        }
+
+        this.main = main;
 
         this.experience = player.totalExperience;
 
-        if (Config.dropRewardXpWhenKilledByPlayer &&!this.world.getGameRules().getBoolean(GameRules.KEEP_INVENTORY) && !player.isSpectator())
+        SoulGuard.LOGGER.info("--------------------");
+        SoulGuard.LOGGER.info(player.getGameProfile().getName() + " XP Report:");
+        SoulGuard.LOGGER.info("Incoming XP: " + this.experience);
+
+
+        if (wasKilledByPlayer && Config.dropRewardXpWhenKilledByPlayer &&!this.world.getGameRules().getBoolean(GameRules.KEEP_INVENTORY) && !player.isSpectator())
             experience -= Math.min(player.experienceLevel * 7, 100);
 
+        SoulGuard.LOGGER.info("XP After Award: " + this.experience);
+
+        SoulGuard.LOGGER.info("XP Lost: " + this.experience * (Config.percentXpLostOnDeath / 100.0));
         this.experience -= this.experience * (Config.percentXpLostOnDeath / 100.0);
 
+        SoulGuard.LOGGER.info("XP After Loss: " + this.experience);
+
         int dropXp = (int) (this.experience * (Config.percentXpDroppedOnDeathAfterLoss / 100.0));
+        SoulGuard.LOGGER.info("XP Dropped: " + dropXp);
         this.experience -= dropXp;
-        while(dropXp > 0) {
-            int j = ExperienceOrbEntity.roundToOrbSize(dropXp);
-            dropXp -= j;
-            this.world.spawnEntity(new ExperienceOrbEntity(this.world, pos.getX(), pos.getY(), pos.getZ(), j));
-        }
+
+        dropXp(dropXp);
+
+        SoulGuard.LOGGER.info("XP After Drop: " + this.experience);
 
         if (this.experience < 0)
             this.experience = 0;
 
+        SoulGuard.LOGGER.info("XP In Soul: " + this.experience);
+        SoulGuard.LOGGER.info("--------------------");
+
+    }
+
+    private void dropXp(int xp) {
+        while (xp > 0) {
+            int j = ExperienceOrbEntity.roundToOrbSize(xp);
+            xp -= j;
+            world.spawnEntity(new ExperienceOrbEntity(world, pos.getX(), pos.getY(), pos.getZ(), j));
+        }
     }
 
     public Soul(CompoundTag tag) {
@@ -116,6 +154,7 @@ public class Soul {
         for (Tag itemTag : tag.getList("armor_inventory",10))
             armor.add(ItemStack.fromTag( (CompoundTag) itemTag));
 
+
         offhand = ItemStack.fromTag( tag.getCompound("offhand_inventory") );
         player = tag.getUuid("player");
         id = tag.getString("id");
@@ -124,6 +163,8 @@ public class Soul {
         releaseIn = tag.getInt("releaseIn");
         createdAt = tag.getLong("createdAt");
         despawnIn = tag.getInt("despawnIn");
+        sealsIn = 0;
+        sealed = true;
 
     }
 
@@ -140,6 +181,19 @@ public class Soul {
         return count;
     }
 
+    public int getStackCount() {
+        int count = main.size();
+        if (!offhand.isEmpty())
+            count += 9;
+        else
+            for (ItemStack stack : armor)
+                if (!stack.isEmpty()) {
+                    count += 9;
+                    break;
+                }
+        return count;
+    }
+
     public boolean process(MinecraftServer server) {
         if (world == null) {
             world = server.getWorld(worldId);
@@ -153,7 +207,7 @@ public class Soul {
             else if (despawnIn > -1)
                 despawnIn--;
 
-            if (releaseIn == 0)
+            if (releaseIn < 1)
                 released = true;
             else if (releaseIn > -1)
                 releaseIn--;
@@ -189,7 +243,7 @@ public class Soul {
     }
 
     private void render(ServerPlayerEntity host) {
-        (locked ? Config.lockedParticles : released ? Config.releasedParticles : Config.boundedParticles).forEach(p -> p.render(world, pos, host, released));
+        (locked ? Config.lockedParticles : released ? Config.releasedParticles : Config.boundedParticles).forEach(p -> p.render(this, pos, host));
 
         for (Soul soul : SoulManager.soulsProcessedThisTick)
             if (soul.pos.isWithinDistance(pos, Config.exclusiveSoundRadius))
@@ -200,8 +254,6 @@ public class Soul {
 
     private void transferInventory(PlayerEntity player) {
         PlayerInventory playerInv = player.inventory;
-
-        System.out.println(main);
 
         if (!offhand.isEmpty()) {
             if (playerInv.offHand.get(0).isEmpty())
@@ -234,6 +286,7 @@ public class Soul {
         player.abilities.creativeMode = mode;
 
 
+        SoulGuard.LOGGER.debug("XP In Soul " + id + ": " + this.experience);
         player.addExperience(experience);
         experience = 0;
 
@@ -266,8 +319,10 @@ public class Soul {
         tag.putUuid("player", player);
         tag.putBoolean("released", released);
         tag.putBoolean("locked", locked);
+        tag.putBoolean("sealed", sealed);
         tag.putInt("releaseIn", releaseIn);
         tag.putInt("despawnIn", despawnIn);
+        tag.putInt("sealsIn", sealsIn);
 
         return tag;
     }

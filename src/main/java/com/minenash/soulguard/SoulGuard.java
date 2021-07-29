@@ -8,6 +8,7 @@ import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.text.LiteralText;
@@ -26,7 +27,7 @@ public class SoulGuard implements ModInitializer {
 
 	public static List<PlayerEntity> CAN_SEE_BOUNDED_SOULS = new ArrayList<>();
 
-
+	public static final boolean HAS_TRINKETS = FabricLoader.getInstance().isModLoaded("trinkets");
 
 	@Override
 	public void onInitialize() {
