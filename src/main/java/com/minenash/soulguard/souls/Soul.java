@@ -67,11 +67,8 @@ public class Soul {
         this.offhand = player.inventory.offHand.get(0);
 
         List<ItemStack> playerMain = new ArrayList<>(player.inventory.main);
-        if (SoulGuard.HAS_TRINKETS) {
-            Inventory inv = TrinketsApi.getTrinketsInventory(player);
-            for (int i = 0; i < inv.size(); i++)
-                playerMain.add(inv.getStack(i));
-        }
+        if (SoulGuard.HAS_TRINKETS)
+            addTrinketsToInventory(playerMain, player);
 
         List<ItemStack> main = new ArrayList<>();
         main.add(ItemStack.EMPTY);
@@ -181,7 +178,9 @@ public class Soul {
         return count;
     }
 
-    public int getStackCount() {
+    public int getStackCount(boolean op) {
+        if (op)
+            return getOPStackCount();
         int count = main.size();
         if (!offhand.isEmpty())
             count += 9;
@@ -194,6 +193,15 @@ public class Soul {
         return count;
     }
 
+    public int getOPStackCount() {
+        for (int i = main.size()-1; i >= 0; i--) {
+            if (!main.get(i).isEmpty())
+                return i + 5;
+        }
+        return 5;
+    }
+
+    public boolean beingInspectedByOp = false;
     public boolean process(MinecraftServer server) {
         if (world == null) {
             world = server.getWorld(worldId);
@@ -204,12 +212,12 @@ public class Soul {
         if (!locked) {
             if (despawnIn == 0)
                 return true;
-            else if (despawnIn > -1)
+            if (despawnIn > -1)
                 despawnIn--;
 
-            if (releaseIn < 1)
+            if (releaseIn == 0)
                 released = true;
-            else if (releaseIn > -1)
+            if (releaseIn > -1)
                 releaseIn--;
         }
 
@@ -218,6 +226,16 @@ public class Soul {
 
         ServerPlayerEntity host = SoulGuard.server.getPlayerManager().getPlayer(this.player);
         render(host);
+
+        if (beingInspectedByOp) {
+            if (released)
+                for (PlayerEntity player : world.getPlayers(p -> p.isAlive() && pos.isWithinDistance(p.getPos(), 1)))
+                    player.sendMessage(new LiteralText("§4Soul §e" + id + "§4 is being inspected by an operator"), true);
+            else if ((host != null && host.isAlive() && pos.isWithinDistance(host.getPos(),1)))
+                host.sendMessage(new LiteralText("§cSoul §e" + id + "§c is being inspected by an operator"), true);
+
+            return false;
+        }
 
 
         if (released) {
@@ -238,8 +256,15 @@ public class Soul {
 
         SoulManager.soulsProcessedThisTick.add(this);
 
-        return main.isEmpty() && experience == 0;
+        return isEmpty();
 
+    }
+
+    public boolean isEmpty() {
+        for (ItemStack item : armor)
+            if (!item.isEmpty())
+                return false;
+        return main.isEmpty() && offhand.isEmpty() && experience == 0;
     }
 
     private void render(ServerPlayerEntity host) {
@@ -354,5 +379,15 @@ public class Soul {
                 ", offhand=" + offhand +
                 ", main=" + main +
                 '}';
+    }
+
+    public void addTrinketsToInventory(List<ItemStack> playerInventory, PlayerEntity player) {
+        Inventory inv = TrinketsApi.TRINKETS.get(player).getInventory();
+        for (int i = 0; i < inv.size(); i++) {
+            ItemStack stack = inv.getStack(i);
+            if (!stack.isEmpty())
+                playerInventory.add(stack);
+        }
+        inv.clear();
     }
 }

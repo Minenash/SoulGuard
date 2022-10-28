@@ -3,6 +3,7 @@ package com.minenash.soulguard.commands;
 import com.minenash.soulguard.SoulGuard;
 import com.minenash.soulguard.config.Config;
 import com.minenash.soulguard.config.ConfigManager;
+import com.minenash.soulguard.inspect.InspectScreenHandlerFactory;
 import com.minenash.soulguard.souls.Soul;
 import com.minenash.soulguard.souls.SoulManager;
 import com.mojang.authlib.GameProfile;
@@ -47,6 +48,7 @@ public class Commands {
                   .then( literal("lock").requires(isOp)
                     .then( argument("soulId", string()).executes(Commands::lockSoul)))
         )));
+
     }
 
     private static int reload(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
@@ -90,12 +92,17 @@ public class Commands {
         return 1;
     }
 
-    private static int inspectSoul(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int inspectSoul(CommandContext<ServerCommandSource> context) {
         String soulId = StringArgumentType.getString(context, "soulId");
         if (!SoulManager.idToSoul.containsKey(soulId))
             return feedback(context, "§cThere's no soul with id: §e" + soulId, false);
 
-        context.getSource().getPlayer().openHandledScreen(InspectScreenHandlerStuff.createFactory(SoulManager.idToSoul.get(soulId)));
+        try {
+            context.getSource().getPlayer().openHandledScreen(InspectScreenHandlerFactory.get(SoulManager.idToSoul.get(soulId)));
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
         return 1;
 //        return feedback(context, "§cInspect Soul Not Implemented Yet", false);
 

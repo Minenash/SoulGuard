@@ -18,7 +18,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(PlayerEntity.class)
+@Mixin(value = PlayerEntity.class, priority = 900)
 public class PlayerEntityMixin {
 
 	boolean wasKilledByPlayer = false;
@@ -38,6 +38,12 @@ public class PlayerEntityMixin {
 
 		inventory.player.sendMessage(CommandHelper.getDeathMessage(soul, e.hasPermissionLevel(2)), false);
 	}
+
+	@Inject(method = "dropInventory", at = @At("TAIL"), cancellable = true)
+	private void doNotDropTrinkets(CallbackInfo info) { info.cancel();}
+
+
+
 
 	@Inject(method = "getCurrentExperience", at = @At("HEAD"), cancellable = true)
 	private void doNotDropXP(CallbackInfoReturnable<Integer> info) {
