@@ -98,7 +98,8 @@ public class Commands {
             return feedback(context, "§cThere's no soul with id: §e" + soulId, false);
 
         try {
-            context.getSource().getPlayer().openHandledScreen(InspectScreenHandlerFactory.get(SoulManager.idToSoul.get(soulId)));
+            PlayerEntity player = context.getSource().getPlayer();
+            player.openHandledScreen(InspectScreenHandlerFactory.get(SoulManager.idToSoul.get(soulId), player));
         }
         catch (Exception e) {
             e.printStackTrace();

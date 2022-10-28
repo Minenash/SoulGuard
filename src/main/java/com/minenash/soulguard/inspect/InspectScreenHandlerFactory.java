@@ -26,12 +26,12 @@ import net.minecraft.text.Text;
 
 public class InspectScreenHandlerFactory {
 
-    public static SimpleNamedScreenHandlerFactory get(Soul soul) {
-        return new SimpleNamedScreenHandlerFactory((syncId, inv, player) -> getHandler(syncId,inv,player,soul),
+    public static SimpleNamedScreenHandlerFactory get(Soul soul, PlayerEntity inspector) {
+        return new SimpleNamedScreenHandlerFactory((syncId, inv, player) -> getHandler(syncId,inv,player,soul,inspector),
                 new LiteralText(SoulGuard.getPlayer(soul.player) + "'s Soul [" + soul.experience + " XP]"));
     }
 
-    private static ScreenHandler getHandler(int syncId, PlayerInventory inv, PlayerEntity player, Soul soul) {
+    private static ScreenHandler getHandler(int syncId, PlayerInventory inv, PlayerEntity player, Soul soul, PlayerEntity inspector) {
         boolean op = player.hasPermissionLevel(2);
         int rows = (int) Math.ceil(soul.getStackCount(op) / 9.0);
 
@@ -44,7 +44,7 @@ public class InspectScreenHandlerFactory {
             default -> ScreenHandlerType.GENERIC_9X1;
         };
 
-        return op ? new OpInspectScreenHandler(type, syncId, inv, rows, soul) :
+        return op ? new OpInspectScreenHandler(type, syncId, inv, rows, soul, inspector) :
                     new InspectScreenHandler(type, syncId, inv, rows, soul);
     }
 

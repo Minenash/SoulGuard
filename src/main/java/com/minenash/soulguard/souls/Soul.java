@@ -256,15 +256,18 @@ public class Soul {
 
         SoulManager.soulsProcessedThisTick.add(this);
 
-        return isEmpty();
+        return isEmpty(false);
 
     }
 
-    public boolean isEmpty() {
+    public boolean isEmpty(boolean ignoreXP) {
         for (ItemStack item : armor)
             if (!item.isEmpty())
                 return false;
-        return main.isEmpty() && offhand.isEmpty() && experience == 0;
+        for (ItemStack item : main)
+            if (!item.isEmpty())
+                return false;
+        return offhand.isEmpty() && (ignoreXP || experience == 0);
     }
 
     private void render(ServerPlayerEntity host) {
