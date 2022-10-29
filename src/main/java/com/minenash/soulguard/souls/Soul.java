@@ -3,6 +3,8 @@ package com.minenash.soulguard.souls;
 import com.minenash.soulguard.SoulGuard;
 import com.minenash.soulguard.config.Config;
 import com.minenash.soulguard.config.SoulParticle;
+import dev.emi.trinkets.api.TrinketComponent;
+import dev.emi.trinkets.api.TrinketSlots;
 import dev.emi.trinkets.api.TrinketsApi;
 import net.minecraft.entity.ExperienceOrbEntity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -45,6 +47,7 @@ public class Soul {
     public List<ItemStack> main;
     public List<ItemStack> armor;
     public ItemStack offhand;
+    public Map<String,ItemStack> trinkets = new LinkedHashMap<>();
 
     public int experience;
 
@@ -68,7 +71,7 @@ public class Soul {
 
         List<ItemStack> playerMain = new ArrayList<>(player.inventory.main);
         if (SoulGuard.HAS_TRINKETS)
-            addTrinketsToInventory(playerMain, player);
+            addTrinketsToInventory(player);
 
         List<ItemStack> main = new ArrayList<>();
         main.add(ItemStack.EMPTY);
@@ -144,12 +147,20 @@ public class Soul {
 
         main = new ArrayList<>();
         armor = new ArrayList<>();
+        trinkets = new LinkedHashMap<>();
 
         for (Tag itemTag : tag.getList("main_inventory",10))
             main.add(ItemStack.fromTag( (CompoundTag) itemTag));
 
         for (Tag itemTag : tag.getList("armor_inventory",10))
             armor.add(ItemStack.fromTag( (CompoundTag) itemTag));
+
+        for (Tag itemTag : tag.getList("trinket_inventory",10)) {
+            CompoundTag trinket = (CompoundTag) itemTag;
+            String slot = trinket.getString("slot");
+            ItemStack item = ItemStack.fromTag( (CompoundTag) trinket.get("item") );
+            trinkets.put(slot, item);
+        }
 
 
         offhand = ItemStack.fromTag( tag.getCompound("offhand_inventory") );
@@ -175,6 +186,8 @@ public class Soul {
             count += stack.getCount();
         for (ItemStack stack : armor)
             count += stack.getCount();
+        for (ItemStack stack : trinkets.values())
+            count += stack.getCount();
         return count;
     }
 
@@ -182,6 +195,7 @@ public class Soul {
         if (op)
             return getOPStackCount();
         int count = main.size();
+        count += trinkets.size();
         if (!offhand.isEmpty())
             count += 9;
         else
@@ -196,9 +210,9 @@ public class Soul {
     public int getOPStackCount() {
         for (int i = main.size()-1; i >= 0; i--) {
             if (!main.get(i).isEmpty())
-                return i + 5;
+                return i + 5 + trinkets.size();
         }
-        return 5;
+        return 5 + trinkets.size();
     }
 
     public boolean beingInspectedByOp = false;
@@ -267,6 +281,9 @@ public class Soul {
         for (ItemStack item : main)
             if (!item.isEmpty())
                 return false;
+        for (ItemStack item : trinkets.values())
+            if (!item.isEmpty())
+                return false;
         return offhand.isEmpty() && (ignoreXP || experience == 0);
     }
 
@@ -300,6 +317,8 @@ public class Soul {
                 armor.set(i, ItemStack.EMPTY);
             }
         }
+        if (SoulGuard.HAS_TRINKETS)
+            transferTrinkets(player);
 
         boolean mode = player.abilities.creativeMode;
         player.abilities.creativeMode  = false;
@@ -334,6 +353,7 @@ public class Soul {
 
         ListTag mainItems = new ListTag();
         ListTag armorItems = new ListTag();
+        ListTag trinketItems = new ListTag();
 
         for (ItemStack item : main)
             mainItems.add(item.toTag(new CompoundTag()));
@@ -341,9 +361,18 @@ public class Soul {
         for (ItemStack item : armor)
             armorItems.add(item.toTag(new CompoundTag()));
 
+        for (var entry : trinkets.entrySet()) {
+            CompoundTag trinket = new CompoundTag();
+            trinket.putString("slot", entry.getKey());
+            trinket.put("item", entry.getValue().toTag(new CompoundTag()));
+            trinketItems.add(trinket);
+        }
+
+
         tag.put("main_inventory", mainItems);
         tag.put("armor_inventory", armorItems);
         tag.put("offhand_inventory", offhand.toTag(new CompoundTag()));
+        tag.put("trinket_inventory", trinketItems);
         tag.putUuid("player", player);
         tag.putBoolean("released", released);
         tag.putBoolean("locked", locked);
@@ -384,13 +413,29 @@ public class Soul {
                 '}';
     }
 
-    public void addTrinketsToInventory(List<ItemStack> playerInventory, PlayerEntity player) {
+    public void addTrinketsToInventory(PlayerEntity player) {
         Inventory inv = TrinketsApi.TRINKETS.get(player).getInventory();
-        for (int i = 0; i < inv.size(); i++) {
-            ItemStack stack = inv.getStack(i);
-            if (!stack.isEmpty())
-                playerInventory.add(stack);
-        }
+        List<String> slots = TrinketSlots.getAllSlotNames();
+
+        for (int i = 0; i < slots.size(); i++)
+            trinkets.put(slots.get(i), inv.getStack(i));
+
         inv.clear();
     }
+
+    public void transferTrinkets(PlayerEntity player) {
+        Inventory inv = TrinketsApi.TRINKETS.get(player).getInventory();
+        List<String> slots = TrinketSlots.getAllSlotNames();
+
+        for (int i = 0; i < slots.size(); i++) {
+            ItemStack stack = trinkets.get(slots.get(i));
+            if (stack != null) {
+                inv.setStack(i, stack);
+                trinkets.remove(slots.get(i));
+            }
+        }
+
+        main.addAll(trinkets.values());
+    }
+
 }

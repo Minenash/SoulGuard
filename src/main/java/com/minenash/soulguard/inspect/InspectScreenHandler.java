@@ -57,8 +57,11 @@ public class InspectScreenHandler extends ScreenHandler {
         if (!soul.offhand.isEmpty())
             items[i++] = soul.offhand;
 
-        for (; i > 0 && i < 9; i++)
-            items[i] = ItemStack.EMPTY;
+        for (ItemStack stack : soul.trinkets.values())
+            items[i++] = stack;
+
+//        for (; i > 0 && i < 9; i++)
+//            items[i] = ItemStack.EMPTY;
 
         for (ItemStack item : soul.main)
             items[i++] = item;

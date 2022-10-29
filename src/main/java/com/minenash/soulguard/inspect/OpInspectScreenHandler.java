@@ -54,7 +54,7 @@ public class OpInspectScreenHandler extends ScreenHandler {
         SoulManager.save();
         if (soul.isEmpty(true)) {
             SoulManager.souls.remove( soul );
-            SoulManager.idToSoul.remove(soul.id);
+            SoulManager.idToSoul.remove( soul.id );
             inspector.sendMessage(new LiteralText("§aYou've emptied their soul, it's now free"), false);
             owner.sendMessage(new LiteralText("§aA server admin has emptied your soul, it's now free"), false);
         }
@@ -68,19 +68,16 @@ public class OpInspectScreenHandler extends ScreenHandler {
         if (slot != null && slot.hasStack()) {
             ItemStack itemStack2 = slot.getStack();
             itemStack = itemStack2.copy();
-            if (index < size) {
-                if (!this.insertItem(itemStack2, size, this.slots.size(), true)) {
+            if (index < size)
+                if (!this.insertItem(itemStack2, size, this.slots.size(), true))
                     return ItemStack.EMPTY;
-                }
-            } else if (!this.insertItem(itemStack2, 0, size, false)) {
+            else if (!this.insertItem(itemStack2, 0, size, false))
                 return ItemStack.EMPTY;
-            }
 
-            if (itemStack2.isEmpty()) {
+            if (itemStack2.isEmpty())
                 slot.setStack(ItemStack.EMPTY);
-            } else {
+            else
                 slot.markDirty();
-            }
         }
 
         return itemStack;
