@@ -11,6 +11,8 @@ import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.text.ClickEvent;
 import net.minecraft.text.HoverEvent;
 import net.minecraft.text.LiteralText;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Vec3d;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -31,7 +33,16 @@ public class PlayerEntityMixin {
 	@Redirect(method = "dropInventory", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/player/PlayerInventory;dropAll()V"))
 	private void dropSoul(PlayerInventory inventory) {
 		Entity e = (Entity)(Object)this;
-		Soul soul = new Soul(e.getPos(),e.getEntityWorld(),inventory.player, wasKilledByPlayer);
+		BlockPos pos = e.getBlockPos();
+		while (!e.world.getBlockState(pos).isAir()) {
+			pos = pos.add(0,1,0);
+			if (pos.getY() >= e.world.getDimensionHeight()) {
+				pos = e.getBlockPos();
+				break;
+			}
+		}
+
+		Soul soul = new Soul(pos,e.getEntityWorld(),inventory.player, wasKilledByPlayer);
 		SoulManager.souls.add(soul);
 		SoulManager.idToSoul.put(soul.id, soul);
 		SoulManager.save();

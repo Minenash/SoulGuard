@@ -48,10 +48,10 @@ public class Soul {
 
     public int experience;
 
-    public Soul(Vec3d pos, World world, PlayerEntity player, boolean wasKilledByPlayer) {
+    public Soul(BlockPos pos, World world, PlayerEntity player, boolean wasKilledByPlayer) {
         this.id = generateId();
         this.createdAt = System.currentTimeMillis();
-        this.pos = new BlockPos(pos);
+        this.pos = pos;
         this.world = (ServerWorld) world;
         this.worldId = RegistryKey.of(Registry.DIMENSION, world.getRegistryKey().getValue());
         this.player = player.getUuid();
