@@ -243,7 +243,7 @@ public class Soul {
 
         if (beingInspectedByOp) {
             if (released)
-                for (PlayerEntity player : world.getPlayers(p -> p.isAlive() && pos.isWithinDistance(p.getPos(), 1)))
+                for (PlayerEntity player : world.getPlayers(p -> p.isAlive() && !p.isSpectator() && pos.isWithinDistance(p.getPos(), 1)))
                     player.sendMessage(new LiteralText("§4Soul §e" + id + "§4 is being inspected by an operator"), true);
             else if ((host != null && host.isAlive() && pos.isWithinDistance(host.getPos(),1)))
                 host.sendMessage(new LiteralText("§cSoul §e" + id + "§c is being inspected by an operator"), true);
@@ -253,7 +253,7 @@ public class Soul {
 
 
         if (released) {
-            List<ServerPlayerEntity> players = world.getPlayers(p -> p.isAlive() && pos.isWithinDistance(p.getPos(), 1));
+            List<ServerPlayerEntity> players = world.getPlayers(p -> p.isAlive() && !p.isSpectator() && pos.isWithinDistance(p.getPos(), 1));
             for (int i = 0; i < players.size() && main.size() + armor.size() + (offhand.isEmpty() ? 0 : 1) > 0; i++) {
                 if (locked)
                     players.get(i).sendMessage(new LiteralText("§4Soul §e" + id + "§4 is locked"), true);
@@ -261,7 +261,7 @@ public class Soul {
                     transferInventory(players.get(i));
             }
         }
-        else if (host != null && host.isAlive() && pos.isWithinDistance(host.getPos(),1)) {
+        else if (host != null && host.isAlive() && !host.isSpectator() && pos.isWithinDistance(host.getPos(),1)) {
             if (locked)
                 host.sendMessage(new LiteralText("§cSoul §e" + id + "§c is locked"), true);
             else
