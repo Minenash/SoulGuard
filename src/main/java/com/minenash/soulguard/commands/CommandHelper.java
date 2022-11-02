@@ -16,17 +16,17 @@ public class CommandHelper {
 
     public static int listSouls(ServerCommandSource sender, List<UUID> uuids, boolean showOwner, boolean selfList) {
         if (uuids != null && uuids.isEmpty() ) {
-            sender.sendFeedback(new LiteralText("§cNo players to list souls for"), false);
+            sender.sendFeedback(Text.literal("§cNo players to list souls for"), false);
             return 0;
         }
         Collection<Soul> souls = uuids == null ? SoulManager.souls : SoulManager.souls.stream().filter(s -> uuids.contains(s.player) ).toList();
         if (souls.isEmpty()) {
-            sender.sendFeedback(new LiteralText("§cNo Souls to list"), false);
+            sender.sendFeedback(Text.literal("§cNo Souls to list"), false);
             return 0;
         }
 
         boolean op = sender.hasPermissionLevel(2);
-        MutableText text =  new LiteralText(selfList || showOwner ? "\n§6==Souls==" : "\n§6==" + SoulGuard.getPlayer(uuids.get(0)) + "'s Souls==");
+        MutableText text =  Text.literal(selfList || showOwner ? "\n§6==Souls==" : "\n§6==" + SoulGuard.getPlayer(uuids.get(0)) + "'s Souls==");
         for (Soul soul : souls)
             text.append( formatEntry(soul, showOwner, op) );
         sender.sendFeedback(text, false);
@@ -35,7 +35,7 @@ public class CommandHelper {
 
     public static Text formatEntry(Soul soul, boolean showOwner, boolean op) {
         String name = SoulGuard.getPlayer(soul.player);
-        MutableText text = new LiteralText("\n");
+        MutableText text = Text.literal("\n");
         addHoverText(text, "§8[§6Info§8]", infoHover(soul));
 
         if (op)
@@ -72,20 +72,20 @@ public class CommandHelper {
     }
 
     private static void addHoverText(MutableText text, String msg, String hover) {
-        text.append(new LiteralText(msg).styled( style -> style
-                .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new LiteralText(hover)))
+        text.append(Text.literal(msg).styled( style -> style
+                .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.literal(hover)))
         ));
     }
 
     private static void addClickText(MutableText text, String msg, String hover, String command, ClickEvent.Action action) {
-        text.append(new LiteralText(msg).styled( style -> style
-                .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new LiteralText(hover)))
+        text.append(Text.literal(msg).styled( style -> style
+                .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.literal(hover)))
                 .withClickEvent(new ClickEvent(action, command))
         ));
     }
 
     public static Text infoText(String prefix, Soul soul, String suffix) {
-        MutableText text = new LiteralText(prefix);
+        MutableText text = Text.literal(prefix);
         addHoverText(text, "§e" + soul.id, infoHover(soul));
         return text.append(suffix);
     }
@@ -119,7 +119,7 @@ public class CommandHelper {
 
 
     public static Text getDeathMessage(Soul soul, boolean op) {
-        MutableText text = new LiteralText("\n§6You have §cdied...§6 But your §bSoul§6 lives on..."
+        MutableText text = Text.literal("\n§6You have §cdied...§6 But your §bSoul§6 lives on..."
                 + "\nListen closely, souls will cry out."
                 + "\nTouching a soul collects it, granting its items/knowledge to you");
         if (Config.minutesUntilSoulIsVisibleToAllPlayers > 0 && Config.minutesUntilSoulDespawns > 0) {

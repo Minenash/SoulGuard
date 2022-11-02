@@ -11,7 +11,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.ScreenHandlerType;
 import net.minecraft.screen.slot.Slot;
-import net.minecraft.text.LiteralText;
+import net.minecraft.text.Text;
 
 public class OpInspectScreenHandler extends ScreenHandler {
 
@@ -55,8 +55,8 @@ public class OpInspectScreenHandler extends ScreenHandler {
         if (soul.isEmpty(true)) {
             SoulManager.souls.remove( soul );
             SoulManager.idToSoul.remove( soul.id );
-            inspector.sendMessage(new LiteralText("§aYou've emptied their soul, it's now free"), false);
-            owner.sendMessage(new LiteralText("§aA server admin has emptied your soul, it's now free"), false);
+            inspector.sendMessage(Text.literal("§aYou've emptied their soul, it's now free"), false);
+            owner.sendMessage(Text.literal("§aA server admin has emptied your soul, it's now free"), false);
         }
 
     }

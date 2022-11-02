@@ -1,13 +1,10 @@
 package com.minenash.soulguard.inspect;
 
 import com.minenash.soulguard.souls.Soul;
-import dev.emi.trinkets.api.TrinketSlots;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.item.ItemStack;
 
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 
 public class SoulInventory implements Inventory {
@@ -15,7 +12,6 @@ public class SoulInventory implements Inventory {
     private final Soul soul;
     private final int size;
     private final int trinketSize;
-    private final List<String> slots = TrinketSlots.getAllSlotNames();
 
     public SoulInventory(Soul soul, int size) {
         this.size = size;
@@ -40,7 +36,7 @@ public class SoulInventory implements Inventory {
         if (slot == 4)
             return soul.offhand;
         if (slot > 4 && slot < 5 + trinketSize)
-            return soul.trinkets.get( slots.get(slot-5) );
+            return soul.trinkets.get( slot-5 ).itemStack();
         if (slot >= 5 + trinketSize && slot < size)
             return soul.main.get(slot - 5 - trinketSize);
 
@@ -69,10 +65,8 @@ public class SoulInventory implements Inventory {
             soul.armor.set(3-slot, stack);
         if (slot == 4)
             soul.offhand = stack;
-//        if (slot > 4 && slot < size)
-//            soul.main.set(slot-5, stack);
-        if (slot > 4 && slot < 5 + trinketSize)
-            soul.trinkets.put( slots.get(slot-5), stack );
+//        if (slot > 4 && slot < 5 + trinketSize)
+//            soul.trinkets.put( slots.get(slot-5), itemStack );
         if (slot >= 5 + trinketSize && slot < size)
             soul.main.set(slot-5-trinketSize, stack);
 

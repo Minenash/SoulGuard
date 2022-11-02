@@ -5,17 +5,15 @@ import com.minenash.soulguard.SoulGuard;
 import com.minenash.soulguard.souls.SoulManager;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.LiteralText;
+import net.minecraft.text.Text;
 
 import java.io.IOException;
 import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -86,7 +84,7 @@ public class ConfigManager {
             SoulGuard.LOGGER.error("[Soulguard] Config load aborted, soul ticking has been disabled for safety");
             for (ServerPlayerEntity player : SoulGuard.server.getPlayerManager().getPlayerList())
                 if (player.hasPermissionLevel(2))
-                    player.sendMessage(new LiteralText("§c[Soulguard] Config load aborted, soul ticking has been disabled for safety"), false);
+                    player.sendMessage(Text.literal("§c[Soulguard] Config load aborted, soul ticking has been disabled for safety"), false);
 
             SoulManager.disable();
             return;

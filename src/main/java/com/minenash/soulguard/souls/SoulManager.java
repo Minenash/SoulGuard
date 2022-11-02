@@ -55,10 +55,10 @@ public class SoulManager {
             return;
         }
 
-        CompoundTag rootTag = null;
+        NbtCompound rootTag = null;
 
         try (DataInputStream dataInputStream = new DataInputStream(new FileInputStream(SAVE_FILE))) {
-            rootTag = NbtIo.read(dataInputStream, PositionTracker.DEFAULT);
+            rootTag = NbtIo.read(dataInputStream);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -68,12 +68,12 @@ public class SoulManager {
             return;
         }
 
-        ListTag soulsTag = rootTag.getList("souls", 10);
+        NbtList soulsTag = rootTag.getList("souls", 10);
         Map<String, Soul> soulsMap = new HashMap<>();
         List<Soul> soulsList = new ArrayList<>();
 
-        for (Tag soulTag : soulsTag) {
-            Soul soul = Soul.fromTag((CompoundTag) soulTag);
+        for (NbtElement soulTag : soulsTag) {
+            Soul soul = Soul.fromTag((NbtCompound) soulTag);
             soulsMap.put(soul.id, soul);
             soulsList.add(soul);
         }
@@ -84,11 +84,11 @@ public class SoulManager {
     }
 
     public static void save() {
-        ListTag soulsTag = new ListTag();
+        NbtList soulsTag = new NbtList();
         for (Soul soul : souls)
             soulsTag.add( soul.toTag() );
 
-        CompoundTag rootTag = new CompoundTag();
+        NbtCompound rootTag = new NbtCompound();
         rootTag.putInt("schema", 1);
         rootTag.put("souls", soulsTag);
 

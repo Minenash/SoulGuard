@@ -27,7 +27,7 @@ public class SoulSound {
         for (ServerPlayerEntity player : SoulGuard.server.getPlayerManager().getPlayerList()) {
             if ((Config.allowPlayersToHearCapturedSouls || released || player == host || player.isSpectator() || SoulGuard.CAN_SEE_BOUNDED_SOULS.contains(player)) && pos.isWithinDistance(player.getPos(), Math.min(16, volume*16))) {
                 Vec3d vec3d = new Vec3d(pos.getX() + offset[0], pos.getY() + offset[1], pos.getZ() + offset[2]);
-                player.networkHandler.sendPacket(new PlaySoundIdS2CPacket(sound, SoundCategory.VOICE, vec3d, volume, pitch));
+                player.networkHandler.sendPacket(new PlaySoundIdS2CPacket(sound, SoundCategory.VOICE, vec3d, volume, pitch, player.getWorld().getRandom().nextLong()));
             }
         }
     }

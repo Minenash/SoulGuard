@@ -9,9 +9,9 @@ import net.minecraft.particle.ParticleTypes;
 import net.minecraft.particle.ParticleEffect;
 import net.minecraft.particle.ParticleType;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Vec3f;
 import net.minecraft.util.registry.Registry;
 
 import java.awt.Color;
@@ -94,7 +94,7 @@ public class SoulParticle {
                     scale = jScale.getAsFloat();
             }
 
-            soulParticle.particle = new DustParticleEffect(color.getRed()/256F, color.getGreen()/256F, color.getBlue()/256F, scale);
+            soulParticle.particle = new DustParticleEffect(new Vec3f(color.getRed()/256F, color.getGreen()/256F, color.getBlue()/256F), scale);
 
         }
 

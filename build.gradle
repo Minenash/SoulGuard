@@ -1,5 +1,5 @@
 plugins {
-	id 'fabric-loom' version '0.6-SNAPSHOT'
+	id 'fabric-loom' version '0.12-SNAPSHOT'
 	id 'maven-publish'
 }
 
@@ -16,6 +16,10 @@ repositories {
 		name = "TerraformersMC"
 		url = "https://maven.terraformersmc.com/"
 	}
+	maven {
+		name = "Ladysnake Libs"
+		url = "https://ladysnake.jfrog.io/artifactory/mods"
+	}
 }
 
 dependencies {
@@ -24,7 +28,7 @@ dependencies {
 	mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
 	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
 
-	// Fabric API. This is technically optional, but you probably want it anyway.
+	modLocalRuntime "com.terraformersmc:modmenu:${project.mod_menu_version}"
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 	modImplementation "dev.emi:trinkets:${project.trinkets_version}"
 

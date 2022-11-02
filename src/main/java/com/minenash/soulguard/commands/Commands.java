@@ -10,7 +10,7 @@ import com.mojang.authlib.GameProfile;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import net.fabricmc.fabric.api.command.v1.CommandRegistrationCallback;
+import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.command.argument.GameProfileArgumentType;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.command.ServerCommandSource;
@@ -31,7 +31,7 @@ public class Commands {
     public static void register() {
         Predicate<ServerCommandSource> isOp = s -> s.hasPermissionLevel(2);
         Predicate<ServerCommandSource> canInspect = s -> s.hasPermissionLevel(2) || Config.allowPlayersToInspectTheirSouls;
-        CommandRegistrationCallback.EVENT.register(((dispatcher, dedicated) -> dispatcher.register(
+        CommandRegistrationCallback.EVENT.register(((dispatcher, x, environment) -> dispatcher.register(
                 literal("soulguard")
                   .executes(Commands::list)
                   .then( literal("reload").requires(isOp).executes(Commands::reload))
@@ -51,13 +51,13 @@ public class Commands {
 
     }
 
-    private static int reload(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-        context.getSource().getPlayer().sendMessage(new LiteralText("[SoulGuard] Config Reloaded"), false);
+    private static int reload(CommandContext<ServerCommandSource> context) {
+        context.getSource().sendMessage(Text.literal("[SoulGuard] Config Reloaded"));
         ConfigManager.load(true);
         return 1;
     }
 
-    private static int list(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int list(CommandContext<ServerCommandSource> context) {
         return CommandHelper.listSouls(context.getSource(), Collections.singletonList(context.getSource().getPlayer().getUuid()), false, true);
     }
 
@@ -65,7 +65,7 @@ public class Commands {
         return CommandHelper.listSouls(context.getSource(), null, true, false);
     }
 
-    private static int seecapturedsouls(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int seecapturedsouls(CommandContext<ServerCommandSource> context) {
         PlayerEntity player = context.getSource().getPlayer();
         if (SoulGuard.CAN_SEE_BOUNDED_SOULS.contains(player)) {
             SoulGuard.CAN_SEE_BOUNDED_SOULS.remove(player);
@@ -137,7 +137,7 @@ public class Commands {
     }
 
     private static int feedback(CommandContext<ServerCommandSource> context, String msg, boolean pass) {
-        context.getSource().sendFeedback(new LiteralText(msg), false);
+        context.getSource().sendFeedback(Text.literal(msg), false);
         return pass ? 1 : 0;
     }
     private static int feedback(CommandContext<ServerCommandSource> context, Text text, boolean pass) {

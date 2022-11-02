@@ -1,6 +1,7 @@
 package com.minenash.soulguard.inspect;
 
 import com.minenash.soulguard.souls.Soul;
+import com.minenash.soulguard.souls.TrinketItem;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.Inventory;
@@ -34,11 +35,12 @@ public class InspectScreenHandler extends ScreenHandler {
     }
 
     @Override
-    public ItemStack onSlotClick(int i, int j, SlotActionType actionType, PlayerEntity playerEntity) {
-        if (actionType == SlotActionType.QUICK_MOVE)
-            return getSlot(i).getStack();
+    public ItemStack transferSlot(PlayerEntity player, int index) {
         return ItemStack.EMPTY;
     }
+
+    @Override
+    public void onSlotClick(int i, int j, SlotActionType actionType, PlayerEntity playerEntity) {}
 
     @Override
     public boolean canUse(PlayerEntity player) {
@@ -57,8 +59,8 @@ public class InspectScreenHandler extends ScreenHandler {
         if (!soul.offhand.isEmpty())
             items[i++] = soul.offhand;
 
-        for (ItemStack stack : soul.trinkets.values())
-            items[i++] = stack;
+        for (TrinketItem trinket : soul.trinkets)
+            items[i++] = trinket.itemStack();
 
 //        for (; i > 0 && i < 9; i++)
 //            items[i] = ItemStack.EMPTY;

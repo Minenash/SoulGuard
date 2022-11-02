@@ -3,22 +3,19 @@ package com.minenash.soulguard.mixin;
 import com.minenash.soulguard.commands.CommandHelper;
 import com.minenash.soulguard.souls.Soul;
 import com.minenash.soulguard.souls.SoulManager;
-import com.minenash.soulguard.config.Config;
+import net.minecraft.block.BlockState;
+import net.minecraft.block.Blocks;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.text.ClickEvent;
-import net.minecraft.text.HoverEvent;
-import net.minecraft.text.LiteralText;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(value = PlayerEntity.class, priority = 900)
 public class PlayerEntityMixin {
@@ -34,9 +31,10 @@ public class PlayerEntityMixin {
 	private void dropSoul(PlayerInventory inventory) {
 		Entity e = (Entity)(Object)this;
 		BlockPos pos = e.getBlockPos();
-		while (!e.world.getBlockState(pos).isAir()) {
+		BlockState state;
+		while (!(state = e.world.getBlockState(pos)).isAir()) {
 			pos = pos.add(0,1,0);
-			if (pos.getY() >= e.world.getDimensionHeight()) {
+			if (e.world.isOutOfHeightLimit(pos) || state.isOf(Blocks.BEDROCK)) {
 				pos = e.getBlockPos();
 				break;
 			}
@@ -50,18 +48,7 @@ public class PlayerEntityMixin {
 		inventory.player.sendMessage(CommandHelper.getDeathMessage(soul, e.hasPermissionLevel(2)), false);
 	}
 
-	@Inject(method = "dropInventory", at = @At("TAIL"), cancellable = true)
-	private void doNotDropTrinkets(CallbackInfo info) { info.cancel();}
-
-
-
-
-	@Inject(method = "getCurrentExperience", at = @At("HEAD"), cancellable = true)
-	private void doNotDropXP(CallbackInfoReturnable<Integer> info) {
-		System.out.println("Killed By player: " + wasKilledByPlayer);
-
-		if (!(Config.dropRewardXpWhenKilledByPlayer && wasKilledByPlayer))
-			info.setReturnValue(0);
-	}
+	@Redirect(method = "dropInventory", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/LivingEntity;dropInventory()V"))
+	private void doNotDropTrinkets(LivingEntity instance) {}
 
 }

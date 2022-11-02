@@ -4,6 +4,7 @@ import com.minenash.soulguard.commands.Commands;
 import com.minenash.soulguard.config.ConfigManager;
 import com.minenash.soulguard.souls.Soul;
 import com.minenash.soulguard.souls.SoulManager;
+import com.mojang.authlib.GameProfile;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
@@ -11,14 +12,11 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.text.LiteralText;
+import net.minecraft.text.Text;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 public class SoulGuard implements ModInitializer {
 
@@ -42,12 +40,13 @@ public class SoulGuard implements ModInitializer {
 
 		ServerEntityEvents.ENTITY_LOAD.register( (entity, _world) -> {
 			if (entity instanceof PlayerEntity && SoulManager.isDisabled() && entity.hasPermissionLevel(2))
-				((PlayerEntity)entity).sendMessage(new LiteralText("§c[Soulguard] Last config load was aborted, soul ticking has been disabled for safety"), false);
+				((PlayerEntity)entity).sendMessage(Text.literal("§c[Soulguard] Last config load was aborted, soul ticking has been disabled for safety"), false);
 		});
 	}
 
 	public static String getPlayer(UUID uuid) {
-		return server.getUserCache().getByUuid(uuid).getName();
+		Optional<GameProfile> p = server.getUserCache().getByUuid(uuid);
+		return p.isEmpty() ? null : p.get().getName();
 	}
 
 

@@ -4,6 +4,7 @@
   "package": "com.minenash.soulguard.mixin",
   "compatibilityLevel": "JAVA_16",
   "mixins": [
+    "LivingEntityMixin",
     "PlayerEntityMixin"
   ],
   "injectors": {

@@ -3,6 +3,7 @@ package com.minenash.soulguard.config;
 import net.minecraft.particle.DustParticleEffect;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.math.Vec3f;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -28,13 +29,13 @@ public class Config {
 
     public static List<SoulParticle> boundedParticles = Arrays.asList(
             new SoulParticle(ParticleTypes.ENCHANT, 18, 0.5, 1, 1, 0.1, 1, 0.1, 0, 1, 0),
-            new SoulParticle(new DustParticleEffect(0.6F,0.8F,1,1F), 5, 0.5, 1, 1, 0.25, 1, 0.25, 0, 1, 0)
+            new SoulParticle(new DustParticleEffect(new Vec3f(0.6F,0.8F,1F),1F), 5, 0.5, 1, 1, 0.25, 1, 0.25, 0, 1, 0)
     );
     public static List<SoulParticle> releasedParticles = new ArrayList<>();
     public static List<SoulParticle> lockedParticles = new ArrayList<>();
 
-    public static List<SoulSound> boundedSounds = Arrays.asList(
-            new SoulSound(new Identifier("entity.ghast.scream"), 1, 1, 10, 1, 0,0 ,0)
+    public static List<SoulSound> boundedSounds = List.of(
+            new SoulSound(new Identifier("entity.ghast.scream"), 1, 1, 10, 1, 0, 0, 0)
     );
     public static List<SoulSound> releasedSounds = new ArrayList<>();
     public static List<SoulSound> lockedSounds = new ArrayList<>();
