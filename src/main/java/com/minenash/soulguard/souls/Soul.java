@@ -208,11 +208,7 @@ public class Soul {
     }
 
     public int getOPStackCount() {
-        for (int i = main.size()-1; i >= 0; i--) {
-            if (!main.get(i).isEmpty())
-                return i + 5 + trinkets.size();
-        }
-        return 5 + trinkets.size();
+        return 5 + trinkets.size() + 36;
     }
 
     public boolean beingInspectedByOp = false;

@@ -8,10 +8,13 @@ import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.inventory.SimpleInventory;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.ScreenHandlerType;
 import net.minecraft.screen.slot.Slot;
+import net.minecraft.screen.slot.SlotActionType;
 import net.minecraft.text.Text;
+import org.jetbrains.annotations.Nullable;
 
 public class OpInspectScreenHandler extends ScreenHandler {
 
@@ -62,10 +65,58 @@ public class OpInspectScreenHandler extends ScreenHandler {
     }
 
     @Override
+    public void setCursorStack(ItemStack stack) {
+        if (stack.isOf(Items.STRUCTURE_VOID) && stack.hasCustomName() )
+            super.setCursorStack(ItemStack.EMPTY);
+        else
+            super.setCursorStack(stack);
+    }
+
+    @Override
+    public void onSlotClick(int slotIndex, int button, SlotActionType actionType, PlayerEntity player) {
+        try {
+            onSlotClickInternal(slotIndex, button, actionType, player);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    private void onSlotClickInternal(int slotIndex, int button, SlotActionType actionType, PlayerEntity player) {
+        if (slotIndex < 0 || slotIndex >= size) {
+            super.onSlotClick(slotIndex, button, actionType, player);
+            return;
+        }
+        if (slotIndex >= soul.getOPStackCount())
+            return;
+
+        Slot slot = this.slots.get(slotIndex);
+        if (!slot.getStack().isOf(Items.STRUCTURE_VOID)) {
+            super.onSlotClick(slotIndex, button, actionType, player);
+            return;
+        }
+
+        if (actionType == SlotActionType.CLONE || actionType == SlotActionType.THROW)
+            return;
+        if (actionType == SlotActionType.SWAP) {
+            ItemStack stack = player.getInventory().getStack(button);
+            if (!stack.isEmpty()) {
+                slot.setStack(stack);
+                player.getInventory().setStack(button, ItemStack.EMPTY);
+            }
+            return;
+        }
+
+        super.onSlotClick(slotIndex, button, actionType, player);
+    }
+
+    @Override
     public ItemStack transferSlot(PlayerEntity player, int index) {
+
         ItemStack itemStack = ItemStack.EMPTY;
         Slot slot = this.slots.get(index);
-        if (slot != null && slot.hasStack()) {
+        if (slot.hasStack()) {
             ItemStack itemStack2 = slot.getStack();
             itemStack = itemStack2.copy();
             if (index < size)
