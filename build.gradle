@@ -24,6 +24,14 @@ repositories {
 		name = "Modrinth"
 		url = "https://api.modrinth.com/maven"
 	}
+	maven {
+		name = "TerraformersMC"
+		url = "https://maven.terraformersmc.com/"
+	}
+	maven {
+		name = "Ladysnake Libs"
+		url = 'https://maven.ladysnake.org/releases'
+	}
 }
 
 dependencies {
@@ -34,7 +42,7 @@ dependencies {
 
 	modLocalRuntime "maven.modrinth:modmenu:${project.mod_menu_version}"
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
-	modImplementation "maven.modrinth:trinkets:${project.trinkets_version}"
+	modImplementation "dev.emi:trinkets:${project.trinkets_version}"
 
 }
 
