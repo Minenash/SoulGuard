@@ -35,7 +35,7 @@ public class InspectScreenHandler extends ScreenHandler {
     }
 
     @Override
-    public ItemStack transferSlot(PlayerEntity player, int index) {
+    public ItemStack quickMove(PlayerEntity player, int index) {
         return ItemStack.EMPTY;
     }
 

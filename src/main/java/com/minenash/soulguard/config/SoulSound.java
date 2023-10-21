@@ -3,17 +3,19 @@ package com.minenash.soulguard.config;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import com.minenash.soulguard.SoulGuard;
-import net.minecraft.network.packet.s2c.play.PlaySoundIdS2CPacket;
+import net.minecraft.network.packet.s2c.play.PlaySoundS2CPacket;
+import net.minecraft.registry.Registries;
+import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundCategory;
+import net.minecraft.sound.SoundEvent;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.Vec3d;
 
 public class SoulSound {
 
-    public Identifier sound;
+    public RegistryEntry<SoundEvent> sound;
     public double[] offset = new double[]{0, 0, 0};
     public float volume = 1, pitch = 1;
     public int frequency = 1;
@@ -26,15 +28,14 @@ public class SoulSound {
         i = 0;
         for (ServerPlayerEntity player : SoulGuard.server.getPlayerManager().getPlayerList()) {
             if ((Config.allowPlayersToHearCapturedSouls || released || player == host || player.isSpectator() || SoulGuard.CAN_SEE_BOUNDED_SOULS.contains(player)) && pos.isWithinDistance(player.getPos(), Math.min(16, volume*16))) {
-                Vec3d vec3d = new Vec3d(pos.getX() + offset[0], pos.getY() + offset[1], pos.getZ() + offset[2]);
-                player.networkHandler.sendPacket(new PlaySoundIdS2CPacket(sound, SoundCategory.VOICE, vec3d, volume, pitch, player.getWorld().getRandom().nextLong()));
+                player.networkHandler.sendPacket(new PlaySoundS2CPacket(sound, SoundCategory.VOICE, pos.getX() + offset[0], pos.getY() + offset[1], pos.getZ() + offset[2], volume, pitch, player.getWorld().getRandom().nextLong()));
             }
         }
     }
 
     public SoulSound() {}
     public SoulSound(Identifier sound, int volume, float pitch, int frequency, int delay, double offsetX, double offsetY, double offsetZ) {
-        this.sound = sound;
+        this.sound = Registries.SOUND_EVENT.getEntry(Registries.SOUND_EVENT.get(sound));
         this.volume = volume;
         this.pitch = pitch;
         this.frequency = frequency;
@@ -52,7 +53,7 @@ public class SoulSound {
         if (!jSound.isString())
             return SoulPropertyResult.quickFailSound("Sound '" + jSound.toString() + "' is not a string");
 
-        soulSound.sound = new Identifier(jSound.getAsString());
+        soulSound.sound = Registries.SOUND_EVENT.getEntry(Registries.SOUND_EVENT.get( new Identifier(jSound.getAsString()) ));
 
         SoulPropertyResult<SoulSound> result = new SoulPropertyResult<>();
 

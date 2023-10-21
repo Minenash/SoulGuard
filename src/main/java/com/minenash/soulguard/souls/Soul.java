@@ -12,14 +12,16 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtList;
+import net.minecraft.registry.Registries;
+import net.minecraft.registry.RegistryKeys;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.registry.Registry;
-import net.minecraft.util.registry.RegistryKey;
+import net.minecraft.registry.Registry;
+import net.minecraft.registry.RegistryKey;
 import net.minecraft.world.GameRules;
 import net.minecraft.world.World;
 
@@ -53,7 +55,7 @@ public class Soul {
         this.createdAt = System.currentTimeMillis();
         this.pos = pos;
         this.world = (ServerWorld) world;
-        this.worldId = RegistryKey.of(Registry.WORLD_KEY, world.getRegistryKey().getValue());
+        this.worldId = RegistryKey.of(RegistryKeys.WORLD, world.getRegistryKey().getValue());
         this.player = player.getUuid();
 
         this.releaseIn = Math.max(-1, Config.minutesUntilSoulIsVisibleToAllPlayers * 1200);
@@ -141,7 +143,7 @@ public class Soul {
 
         NbtCompound position = tag.getCompound("position");
         pos = new BlockPos(position.getInt("x"), position.getInt("y"), position.getInt("z"));
-        worldId = RegistryKey.of(Registry.WORLD_KEY, new Identifier(position.getString("world")));
+        worldId = RegistryKey.of(RegistryKeys.WORLD, new Identifier(position.getString("world")));
 
         main = new ArrayList<>();
         armor = new ArrayList<>();

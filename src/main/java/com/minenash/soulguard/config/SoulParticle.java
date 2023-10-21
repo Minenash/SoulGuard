@@ -8,11 +8,12 @@ import net.minecraft.particle.DustParticleEffect;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.particle.ParticleEffect;
 import net.minecraft.particle.ParticleType;
+import net.minecraft.registry.Registries;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3f;
-import net.minecraft.util.registry.Registry;
+import net.minecraft.registry.Registry;
+import org.joml.Vector3f;
 
 import java.awt.Color;
 
@@ -62,7 +63,7 @@ public class SoulParticle {
         if (!jType.isString())
             return SoulPropertyResult.quickFailParticle("Unknown Particle Type: '" + jType.toString() + "'");
 
-        ParticleType<?> type = Registry.PARTICLE_TYPE.get(new Identifier(jType.getAsString()));
+        ParticleType<?> type = Registries.PARTICLE_TYPE.get(new Identifier(jType.getAsString()));
         if (type == null)
             return SoulPropertyResult.quickFailParticle("Unknown Particle Type: '" + jType.getAsString() + "'");
 
@@ -94,7 +95,7 @@ public class SoulParticle {
                     scale = jScale.getAsFloat();
             }
 
-            soulParticle.particle = new DustParticleEffect(new Vec3f(color.getRed()/256F, color.getGreen()/256F, color.getBlue()/256F), scale);
+            soulParticle.particle = new DustParticleEffect(new Vector3f(color.getRed()/256F, color.getGreen()/256F, color.getBlue()/256F), scale);
 
         }
 
