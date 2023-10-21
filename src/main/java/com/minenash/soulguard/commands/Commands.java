@@ -137,11 +137,11 @@ public class Commands {
     }
 
     private static int feedback(CommandContext<ServerCommandSource> context, String msg, boolean pass) {
-        context.getSource().sendFeedback(Text.literal(msg), false);
+        context.getSource().sendMessage(Text.literal(msg));
         return pass ? 1 : 0;
     }
     private static int feedback(CommandContext<ServerCommandSource> context, Text text, boolean pass) {
-        context.getSource().sendFeedback(text, false);
+        context.getSource().sendMessage(text);
         return pass ? 1 : 0;
     }
 

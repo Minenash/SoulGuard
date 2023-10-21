@@ -32,9 +32,9 @@ public class PlayerEntityMixin {
 		Entity e = (Entity)(Object)this;
 		BlockPos pos = e.getBlockPos();
 		BlockState state;
-		while (!(state = e.world.getBlockState(pos)).isAir()) {
+		while (!(state = e.getWorld().getBlockState(pos)).isAir()) {
 			pos = pos.add(0,1,0);
-			if (e.world.isOutOfHeightLimit(pos) || state.isOf(Blocks.BEDROCK)) {
+			if (e.getWorld().isOutOfHeightLimit(pos) || state.isOf(Blocks.BEDROCK)) {
 				pos = e.getBlockPos();
 				break;
 			}

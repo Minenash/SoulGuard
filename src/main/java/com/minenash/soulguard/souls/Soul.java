@@ -77,7 +77,7 @@ public class Soul {
         main.add(ItemStack.EMPTY);
         for (ItemStack item : playerMain) {
             for (ItemStack i : new ArrayList<>(main)) {
-                if (item.getItem() == i.getItem() && ItemStack.areNbtEqual(item, i)) {
+                if (item.getItem() == i.getItem() && Objects.equals(item.getNbt(), i.getNbt())) {
                     int count = i.getCount() + item.getCount();
                     int max = i.getMaxCount();
                     i.setCount(Math.min(count, max));

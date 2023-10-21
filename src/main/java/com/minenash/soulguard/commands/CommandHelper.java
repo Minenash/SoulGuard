@@ -16,12 +16,12 @@ public class CommandHelper {
 
     public static int listSouls(ServerCommandSource sender, List<UUID> uuids, boolean showOwner, boolean selfList) {
         if (uuids != null && uuids.isEmpty() ) {
-            sender.sendFeedback(Text.literal("§cNo players to list souls for"), false);
+            sender.sendMessage(Text.literal("§cNo players to list souls for"));
             return 0;
         }
         Collection<Soul> souls = uuids == null ? SoulManager.souls : SoulManager.souls.stream().filter(s -> uuids.contains(s.player) ).toList();
         if (souls.isEmpty()) {
-            sender.sendFeedback(Text.literal("§cNo Souls to list"), false);
+            sender.sendMessage(Text.literal("§cNo Souls to list"));
             return 0;
         }
 
@@ -29,7 +29,7 @@ public class CommandHelper {
         MutableText text =  Text.literal(selfList || showOwner ? "\n§6==Souls==" : "\n§6==" + SoulGuard.getPlayer(uuids.get(0)) + "'s Souls==");
         for (Soul soul : souls)
             text.append( formatEntry(soul, showOwner, op) );
-        sender.sendFeedback(text, false);
+        sender.sendMessage(text);
         return 1;
     }
 
