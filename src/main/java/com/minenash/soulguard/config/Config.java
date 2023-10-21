@@ -35,7 +35,8 @@ public class Config {
     public static List<SoulParticle> lockedParticles = new ArrayList<>();
 
     public static List<SoulSound> boundedSounds = List.of(
-            new SoulSound(new Identifier("entity.ghast.scream"), 1, 1, 10, 1, 0, 0, 0)
+            new SoulSound(new Identifier("entity.phantom.ambient"), 1, 0.8F, 100, 1, 0, 0, 0),
+            new SoulSound(new Identifier("entity.vex.ambient"), 1, 0.8F, 100, 21, 0, 0, 0)
     );
     public static List<SoulSound> releasedSounds = new ArrayList<>();
     public static List<SoulSound> lockedSounds = new ArrayList<>();
