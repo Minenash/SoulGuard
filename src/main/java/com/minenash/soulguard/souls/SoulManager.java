@@ -2,20 +2,17 @@ package com.minenash.soulguard.souls;
 
 import com.minenash.soulguard.SoulGuard;
 import com.minenash.soulguard.config.ConfigManager;
-import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.nbt.*;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.text.*;
-import net.minecraft.util.math.BlockPos;
 
 import java.io.*;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 
 public class SoulManager {
 
-    private static final File SAVE_FILE = ConfigManager.CONFIG_FOLDER.resolve("souls.nbt").toFile();
+    private static final Path SAVE_FILE = ConfigManager.CONFIG_FOLDER.resolve("souls.nbt");
 
     private static boolean processSouls = false;
 
@@ -49,7 +46,7 @@ public class SoulManager {
     }
 
     public static void load() {
-        if (!SAVE_FILE.exists()) {
+        if (!Files.exists(SAVE_FILE)) {
             SoulGuard.LOGGER.info("[Soulguard] Soul Save File doesn't exist, creating one");
             save();
             return;
@@ -57,8 +54,8 @@ public class SoulManager {
 
         NbtCompound rootTag = null;
 
-        try (DataInputStream dataInputStream = new DataInputStream(new FileInputStream(SAVE_FILE))) {
-            rootTag = NbtIo.read(dataInputStream);
+        try {
+            rootTag = NbtIo.read(SAVE_FILE);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -93,14 +90,12 @@ public class SoulManager {
         rootTag.put("souls", soulsTag);
 
         try {
-            if (!SAVE_FILE.exists()) {
+            if (!Files.exists(SAVE_FILE)) {
                 if (!Files.exists(ConfigManager.CONFIG_FOLDER))
                     Files.createDirectory(ConfigManager.CONFIG_FOLDER);
-                SAVE_FILE.createNewFile();
+                Files.createFile(SAVE_FILE);
             }
-            try (DataOutputStream dataOutputStream = new DataOutputStream(new FileOutputStream(SAVE_FILE))) {
-                NbtIo.write(rootTag, dataOutputStream);
-            }
+            NbtIo.write(rootTag, SAVE_FILE);
             SoulGuard.LOGGER.info("[Soulguard] Saved Souls");
         } catch (IOException e) {
             SoulGuard.LOGGER.error("[Soulguard] Couldn't save Souls");

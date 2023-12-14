@@ -32,12 +32,20 @@
   "locked_particles": [],
   "captured_sounds": [
     {
-      "sound": "entity.ghast.scream",
+      "sound": "entity.phantom.ambient",
       "volume": 1,
-      "pitch": 1,
-      "offset": [0.0, 1.0, 0.0],
-      "frequency": 10,
-      "delay": 0
+      "pitch": 0.8,
+      "offset": [0.0, 0.0, 0.0],
+      "frequency": 100,
+      "delay": 1
+    },
+    {
+      "sound": "entity.vex.ambient",
+      "volume": 1,
+      "pitch": 0.8,
+      "offset": [0.0, 0.0, 0.0],
+      "frequency": 100,
+      "delay": 21
     }
   ],
   "released_sounds": [],
