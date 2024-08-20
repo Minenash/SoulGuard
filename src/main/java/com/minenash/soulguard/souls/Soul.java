@@ -141,7 +141,7 @@ public class Soul {
 
         NbtCompound position = tag.getCompound("position");
         pos = new BlockPos(position.getInt("x"), position.getInt("y"), position.getInt("z"));
-        worldId = RegistryKey.of(RegistryKeys.WORLD, Identifier.of(position.getString("world")));
+        worldId = RegistryKey.of(RegistryKeys.WORLD, Identifier.tryParse(position.getString("world")));
 
         main = new ArrayList<>();
         armor = new ArrayList<>();

@@ -51,9 +51,9 @@ public class SoulSound {
 
         JsonPrimitive jSound = json.getAsJsonPrimitive("sound");
         if (!jSound.isString())
-            return SoulPropertyResult.quickFailSound("Sound '" + jSound.toString() + "' is not a string");
+            return SoulPropertyResult.quickFailSound("Sound '" + jSound.getAsString() + "' is not a string");
 
-        soulSound.sound = Registries.SOUND_EVENT.getEntry(Registries.SOUND_EVENT.get( Identifier.of(jSound.getAsString()) ));
+        soulSound.sound = Registries.SOUND_EVENT.getEntry(Registries.SOUND_EVENT.get( Identifier.tryParse(jSound.getAsString()) ));
 
         SoulPropertyResult<SoulSound> result = new SoulPropertyResult<>();
 

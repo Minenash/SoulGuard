@@ -61,9 +61,9 @@ public class SoulParticle {
 
         JsonPrimitive jType = json.getAsJsonPrimitive("type");
         if (!jType.isString())
-            return SoulPropertyResult.quickFailParticle("Unknown Particle Type: '" + jType.toString() + "'");
+            return SoulPropertyResult.quickFailParticle("Unknown Particle Type: '" + jType.getAsString() + "'");
 
-        ParticleType<?> type = Registries.PARTICLE_TYPE.get(Identifier.of(jType.getAsString()));
+        ParticleType<?> type = Registries.PARTICLE_TYPE.get(Identifier.tryParse(jType.getAsString()));
         if (type == null)
             return SoulPropertyResult.quickFailParticle("Unknown Particle Type: '" + jType.getAsString() + "'");
 
