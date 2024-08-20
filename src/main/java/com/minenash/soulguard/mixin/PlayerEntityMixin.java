@@ -24,11 +24,14 @@ public class PlayerEntityMixin {
 
 	@Inject(method = "onDeath", at = @At("HEAD"))
 	private void wasKilledByPlayer(DamageSource source, CallbackInfo info) {
+		System.out.println("A");
 		wasKilledByPlayer = source.getAttacker() instanceof PlayerEntity;
+		System.out.println("B");
 	}
 
 	@Redirect(method = "dropInventory", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/player/PlayerInventory;dropAll()V"))
 	private void dropSoul(PlayerInventory inventory) {
+		System.out.println("C");
 		Entity e = (Entity)(Object)this;
 		BlockPos pos = e.getBlockPos();
 		BlockState state;
@@ -39,13 +42,17 @@ public class PlayerEntityMixin {
 				break;
 			}
 		}
-
+		System.out.println("C-1");
 		Soul soul = new Soul(pos,e.getEntityWorld(),inventory.player, wasKilledByPlayer);
+		System.out.println("C-2");
 		SoulManager.souls.add(soul);
 		SoulManager.idToSoul.put(soul.id, soul);
+		System.out.println("C-3");
 		SoulManager.save();
+		System.out.println("c-4");
 
 		inventory.player.sendMessage(CommandHelper.getDeathMessage(soul, e.hasPermissionLevel(2)), false);
+		System.out.println("D");
 	}
 
 	@Redirect(method = "dropInventory", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/LivingEntity;dropInventory()V"))

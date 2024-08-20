@@ -1,6 +1,7 @@
 package com.minenash.soulguard.inspect;
 
 import com.minenash.soulguard.souls.Soul;
+import net.minecraft.component.DataComponentTypes;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.item.ItemStack;
@@ -39,21 +40,24 @@ public class SoulInventory implements Inventory {
             return item;
 
         item = new ItemStack(Items.STRUCTURE_VOID);
-        if (slot == 0) return item.setCustomName(Text.literal("Head"));
-        if (slot == 1) return item.setCustomName(Text.literal("Chest"));
-        if (slot == 2) return item.setCustomName(Text.literal("Legs"));
-        if (slot == 3) return item.setCustomName(Text.literal("Feet"));
-        if (slot == 4) return item.setCustomName(Text.literal("Offhand"));
+        if (slot == 0) {item.set(DataComponentTypes.CUSTOM_NAME, Text.literal("Head")); return item;}
+        if (slot == 1) {item.set(DataComponentTypes.CUSTOM_NAME, Text.literal("Chest")); return item;}
+        if (slot == 2) {item.set(DataComponentTypes.CUSTOM_NAME, Text.literal("Legs")); return item;};
+        if (slot == 3) {item.set(DataComponentTypes.CUSTOM_NAME, Text.literal("Feet")); return item;}
+        if (slot == 4) {item.set(DataComponentTypes.CUSTOM_NAME, Text.literal("Offhand")); return item;};
 
         if (slot > 4 && slot < 5 + trinketSize) {
             StringBuilder str2 = new StringBuilder();
             for (String part : soul.trinkets.get(slot - 5).slot().split(" "))
                 str2.append(part.substring(0, 1).toUpperCase()).append(part.substring(1));
-            return item.setCustomName(Text.literal(str2.toString()));
+            item.set(DataComponentTypes.CUSTOM_NAME, Text.literal("Head"));
+            return item;
         }
 
-        if (slot >= 5 + trinketSize && slot < soul.getOPStackCount())
-            return item.setCustomName(Text.literal( "Inventory " + (slot - 5 - trinketSize) ));
+        if (slot >= 5 + trinketSize && slot < soul.getOPStackCount()) {
+            item.set(DataComponentTypes.CUSTOM_NAME, Text.literal("Inventory " + (slot - 5 - trinketSize)));
+            return item;
+        }
 
         return ItemStack.EMPTY;
     }

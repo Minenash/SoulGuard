@@ -12,16 +12,13 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtList;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.RegistryKeys;
+import net.minecraft.registry.*;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.registry.Registry;
-import net.minecraft.registry.RegistryKey;
 import net.minecraft.world.GameRules;
 import net.minecraft.world.World;
 
@@ -43,6 +40,7 @@ public class Soul {
     public ServerWorld world;
     public UUID player;
 
+    public NbtCompound tagForItemsNeedingDecoding;
     public List<ItemStack> main;
     public List<ItemStack> armor;
     public ItemStack offhand;
@@ -148,24 +146,8 @@ public class Soul {
         main = new ArrayList<>();
         armor = new ArrayList<>();
         trinkets = new ArrayList<>();
+        tagForItemsNeedingDecoding = tag;
 
-        for (NbtElement itemTag : tag.getList("main_inventory",10))
-            main.add(ItemStack.fromNbt( (NbtCompound) itemTag));
-
-        for (NbtElement itemTag : tag.getList("armor_inventory",10))
-            armor.add(ItemStack.fromNbt( (NbtCompound) itemTag));
-
-        for (NbtElement itemTag : tag.getList("trinket_inventory",10)) {
-            NbtCompound trinket = (NbtCompound) itemTag;
-            String group = trinket.getString("group");
-            String slot = trinket.getString("slot");
-            int index = trinket.getInt("index");
-            ItemStack item = ItemStack.fromNbt( (NbtCompound) trinket.get("item") );
-            trinkets.add(new TrinketItem(group, slot, index, item));
-        }
-
-
-        offhand = ItemStack.fromNbt( tag.getCompound("offhand_inventory") );
         player = tag.getUuid("player");
         id = tag.getString("id");
         released = tag.getBoolean("released");
@@ -219,6 +201,27 @@ public class Soul {
             world = server.getWorld(worldId);
             if (world == null)
                 return false;
+
+            if (tagForItemsNeedingDecoding != null) {
+                RegistryWrapper.WrapperLookup lookup = world.getRegistryManager();
+                for (NbtElement itemTag : tagForItemsNeedingDecoding.getList("main_inventory", 10))
+                    main.add(ItemStack.fromNbt(lookup, itemTag).orElse(ItemStack.EMPTY));
+
+                for (NbtElement itemTag : tagForItemsNeedingDecoding.getList("armor_inventory", 10))
+                    armor.add(ItemStack.fromNbt(lookup, itemTag).orElse(ItemStack.EMPTY));
+
+                for (NbtElement itemTag : tagForItemsNeedingDecoding.getList("trinket_inventory", 10)) {
+                    NbtCompound trinket = (NbtCompound) itemTag;
+                    String group = trinket.getString("group");
+                    String slot = trinket.getString("slot");
+                    int index = trinket.getInt("index");
+                    ItemStack item = ItemStack.fromNbt(lookup, trinket.get("item")).orElse(ItemStack.EMPTY);
+                    trinkets.add(new TrinketItem(group, slot, index, item));
+                }
+                offhand = ItemStack.fromNbt(lookup, tagForItemsNeedingDecoding.getCompound("offhand_inventory") ).orElse(ItemStack.EMPTY);
+
+                tagForItemsNeedingDecoding = null;
+            }
         }
 
         if (!locked) {
@@ -354,24 +357,26 @@ public class Soul {
         NbtList armorItems = new NbtList();
         NbtList trinketItems = new NbtList();
 
+        RegistryWrapper.WrapperLookup lookup = world.getRegistryManager();
+
         for (ItemStack item : main)
-            mainItems.add(item.writeNbt(new NbtCompound()));
+            mainItems.add(item.encodeAllowEmpty(lookup));
 
         for (ItemStack item : armor)
-            armorItems.add(item.writeNbt(new NbtCompound()));
+            armorItems.add(item.encodeAllowEmpty(lookup));
 
         for (TrinketItem entry : trinkets) {
             NbtCompound trinket = new NbtCompound();
             trinket.putString("group", entry.group());
             trinket.putString("slot", entry.slot());
             trinket.putInt("index", entry.index());
-            trinket.put("item", entry.itemStack().writeNbt(new NbtCompound()));
+            trinket.put("item", entry.itemStack().encodeAllowEmpty(lookup));
             trinketItems.add(trinket);
         }
 
         tag.put("main_inventory", mainItems);
         tag.put("armor_inventory", armorItems);
-        tag.put("offhand_inventory", offhand.writeNbt(new NbtCompound()));
+        tag.put("offhand_inventory", offhand.encodeAllowEmpty(lookup));
         tag.put("trinket_inventory", trinketItems);
         tag.putUuid("player", player);
         tag.putBoolean("released", released);

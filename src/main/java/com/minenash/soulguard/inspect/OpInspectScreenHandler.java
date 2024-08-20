@@ -3,6 +3,7 @@ package com.minenash.soulguard.inspect;
 import com.minenash.soulguard.souls.Soul;
 import com.minenash.soulguard.souls.SoulManager;
 import net.minecraft.block.Blocks;
+import net.minecraft.component.DataComponentTypes;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.Inventory;
@@ -66,7 +67,7 @@ public class OpInspectScreenHandler extends ScreenHandler {
 
     @Override
     public void setCursorStack(ItemStack stack) {
-        if (stack.isOf(Items.STRUCTURE_VOID) && stack.hasCustomName() )
+        if (stack.isOf(Items.STRUCTURE_VOID) && stack.get(DataComponentTypes.CUSTOM_NAME) != null)
             super.setCursorStack(ItemStack.EMPTY);
         else
             super.setCursorStack(stack);

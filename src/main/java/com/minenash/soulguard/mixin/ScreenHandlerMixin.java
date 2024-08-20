@@ -1,6 +1,7 @@
 package com.minenash.soulguard.mixin;
 
 import com.minenash.soulguard.inspect.OpInspectScreenHandler;
+import net.minecraft.component.DataComponentTypes;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
@@ -27,13 +28,13 @@ public class ScreenHandlerMixin {
 
     @Inject(method = "canInsertItemIntoSlot", at = @At("HEAD"), cancellable = true)
     private static void ignoreStructureVoid(Slot slot, ItemStack stack, boolean allowOverflow, CallbackInfoReturnable<Boolean> cir) {
-        if ( slot == null || (handler instanceof OpInspectScreenHandler && slot.getStack().isOf(Items.STRUCTURE_VOID) && slot.getStack().hasCustomName()) )
+        if ( slot == null || (handler instanceof OpInspectScreenHandler && slot.getStack().isOf(Items.STRUCTURE_VOID) && slot.getStack().get(DataComponentTypes.CUSTOM_NAME) != null) )
             cir.setReturnValue(true);
     }
 
     @Redirect(method = "internalOnSlotClick", at = @At(value = "INVOKE", ordinal = 3, target = "Lnet/minecraft/item/ItemStack;getCount()I"))
     public int getCount(ItemStack stack) {
-        return stack.isOf(Items.STRUCTURE_VOID) && stack.hasCustomName() ? 0 : stack.getCount();
+        return stack.isOf(Items.STRUCTURE_VOID) && stack.get(DataComponentTypes.CUSTOM_NAME) != null ? 0 : stack.getCount();
     }
 
 }
