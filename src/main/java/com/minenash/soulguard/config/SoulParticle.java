@@ -63,7 +63,7 @@ public class SoulParticle {
         if (!jType.isString())
             return SoulPropertyResult.quickFailParticle("Unknown Particle Type: '" + jType.toString() + "'");
 
-        ParticleType<?> type = Registries.PARTICLE_TYPE.get(new Identifier(jType.getAsString()));
+        ParticleType<?> type = Registries.PARTICLE_TYPE.get(Identifier.of(jType.getAsString()));
         if (type == null)
             return SoulPropertyResult.quickFailParticle("Unknown Particle Type: '" + jType.getAsString() + "'");
 
@@ -107,7 +107,7 @@ public class SoulParticle {
         Double[] offset = JsonHelper.getVec3Array(json, "offset", result);
 
         if (count == null || count == 0) {
-            if (type == ParticleTypes.ENTITY_EFFECT || type == ParticleTypes.AMBIENT_ENTITY_EFFECT) {
+            if (type == ParticleTypes.ENTITY_EFFECT || type == ParticleTypes.EFFECT || type == ParticleTypes.INSTANT_EFFECT) {
                 if (json.has("color")) {
                     if (delta[0] != null || delta[1] != null || delta[2] != null)
                         result.addDebugMessage("The color property and delta properties are incompatible for this type, using delta values");

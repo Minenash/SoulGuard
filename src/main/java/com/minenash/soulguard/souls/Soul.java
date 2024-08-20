@@ -77,7 +77,7 @@ public class Soul {
         main.add(ItemStack.EMPTY);
         for (ItemStack item : playerMain) {
             for (ItemStack i : new ArrayList<>(main)) {
-                if (item.getItem() == i.getItem() && Objects.equals(item.getNbt(), i.getNbt())) {
+                if (ItemStack.areItemsAndComponentsEqual(item, i)) {
                     int count = i.getCount() + item.getCount();
                     int max = i.getMaxCount();
                     i.setCount(Math.min(count, max));
@@ -89,11 +89,11 @@ public class Soul {
                 main.add(item.copy());
         }
 
-        main.remove(0);
+        main.removeFirst();
 
         while (main.size() > 45) {
-            player.dropItem(main.get(main.size()-1), false);
-            main.remove(main.size()-1);
+            player.dropItem(main.getLast(), false);
+            main.removeLast();
         }
 
         this.main = main;
@@ -143,7 +143,7 @@ public class Soul {
 
         NbtCompound position = tag.getCompound("position");
         pos = new BlockPos(position.getInt("x"), position.getInt("y"), position.getInt("z"));
-        worldId = RegistryKey.of(RegistryKeys.WORLD, new Identifier(position.getString("world")));
+        worldId = RegistryKey.of(RegistryKeys.WORLD, Identifier.of(position.getString("world")));
 
         main = new ArrayList<>();
         armor = new ArrayList<>();
